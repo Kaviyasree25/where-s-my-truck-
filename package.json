@@ -1,0 +1,16 @@
+{
+  "name": "inbound-warehouse-platform",
+  "version": "1.0.0",
+  "description": "Production-style enterprise warehouse inbound operations and supply-chain visibility control tower MVP",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "start": "cd server && npm start",
+    "build": "cd server && npm run build && cd ../client && npm run build"
+  },
+  "keywords": ["warehouse", "supply-chain", "yard-management", "dock-allocation", "control-tower"],
+  "author": "Antigravity Engineering",
+  "license": "MIT"
+}
