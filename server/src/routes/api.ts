@@ -165,6 +165,10 @@ router.get('/analytics/kpis', (req, res) => {
   res.json(store.getAnalyticsKPIs());
 });
 
+router.get('/analytics/heatmap', (req, res) => {
+  res.json(store.getHeatmapData());
+});
+
 // 11. Allocation Engine & Assignment Endpoints
 router.post('/allocation/evaluate', (req, res) => {
   const { shipmentId } = req.body;
@@ -370,14 +374,22 @@ router.post('/recommendations/priority', (req, res) => {
   }
 });
 
-router.post('/ml/train', (req, res) => {
+router.get('/ml/model-info', (req, res) => {
   try {
+    const info = mlRecommendationService.getModelTelemetry();
+    res.json(info);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/ml/train', async (req, res) => {
+  try {
+    const updatedTelemetry = await mlRecommendationService.trainModel();
     res.json({
       success: true,
-      message: 'RandomForestClassifier trained successfully on 1,200 historical operational decision records',
-      trainedAt: new Date().toISOString(),
-      dockModelAccuracy: '94.2%',
-      yardModelAccuracy: '96.8%'
+      message: `RandomForestClassifier (${updatedTelemetry.ensembleSize} Trees) trained on ${updatedTelemetry.trainingSamplesCount} historical feature vectors`,
+      telemetry: updatedTelemetry,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
