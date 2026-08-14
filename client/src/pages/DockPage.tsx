@@ -4,6 +4,7 @@ import { getSocket } from '../services/socket';
 import { Dock, DockStatus } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { ReassignmentModal } from '../components/common/ReassignmentModal';
+import { DockEditModal } from '../components/admin/DockEditModal';
 import {
   Building2,
   SquareStack,
@@ -13,10 +14,12 @@ import {
   Clock,
   Truck,
   RefreshCw,
+  Sliders,
 } from 'lucide-react';
 
 export const DockPage: React.FC = () => {
   const [docks, setDocks] = useState<Dock[]>([]);
+  const [editingDock, setEditingDock] = useState<Dock | null>(null);
   const [loading, setLoading] = useState(true);
   const [reassignmentData, setReassignmentData] = useState<any | null>(null);
 
@@ -160,12 +163,20 @@ export const DockPage: React.FC = () => {
 
               {/* Controls */}
               <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-2 text-xs">
-                <span className="text-[10px] text-slate-400 font-mono">Operational Override:</span>
+                <button
+                  onClick={() => setEditingDock(dock)}
+                  className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded text-[11px] font-mono border border-slate-200 font-bold flex items-center space-x-1 cursor-pointer transition shadow-2xs"
+                  title="Configure capabilities and maintenance downtime"
+                >
+                  <Sliders className="w-3 h-3 text-blue-600" />
+                  <span>Configure</span>
+                </button>
+
                 <div className="flex space-x-1">
                   {dock.status !== 'AVAILABLE' && (
                     <button
                       onClick={() => handleStatusChange(dock.id, 'AVAILABLE')}
-                      className="px-2 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 rounded text-[11px] font-mono border border-emerald-300"
+                      className="px-2 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 rounded text-[11px] font-mono border border-emerald-300 cursor-pointer"
                     >
                       Set Available
                     </button>
@@ -173,7 +184,7 @@ export const DockPage: React.FC = () => {
                   {dock.status !== 'BLOCKED' && (
                     <button
                       onClick={() => handleStatusChange(dock.id, 'BLOCKED')}
-                      className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-red-600 rounded text-[11px] font-mono border border-red-300"
+                      className="px-2 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-red-600 rounded text-[11px] font-mono border border-red-300 cursor-pointer"
                     >
                       Block Dock
                     </button>
@@ -181,7 +192,7 @@ export const DockPage: React.FC = () => {
                   {dock.status !== 'MAINTENANCE' && (
                     <button
                       onClick={() => handleStatusChange(dock.id, 'MAINTENANCE')}
-                      className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 rounded text-[11px] font-mono border border-amber-300"
+                      className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 rounded text-[11px] font-mono border border-amber-300 cursor-pointer"
                     >
                       Maint.
                     </button>
@@ -192,6 +203,18 @@ export const DockPage: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Dock Edit Modal */}
+      {editingDock && (
+        <DockEditModal
+          dock={editingDock}
+          onClose={() => setEditingDock(null)}
+          onUpdated={() => {
+            setEditingDock(null);
+            fetchDocks();
+          }}
+        />
+      )}
 
       {reassignmentData && (
         <ReassignmentModal

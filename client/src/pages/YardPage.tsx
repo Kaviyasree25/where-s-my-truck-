@@ -5,6 +5,7 @@ import { getSocket } from '../services/socket';
 import { YardState, YardSlot, MLRecommendationResponse } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { MLRecommendationBadge } from '../components/common/MLRecommendationBadge';
+import { YardMoveModal } from '../components/admin/YardMoveModal';
 import {
   Grid,
   AlertTriangle,
@@ -17,12 +18,14 @@ import {
   ShieldAlert,
   Radio,
   Cpu,
+  Navigation,
 } from 'lucide-react';
 
 export const YardPage: React.FC = () => {
   const [yardState, setYardState] = useState<YardState | null>(null);
   const [mlRec, setMlRec] = useState<MLRecommendationResponse | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<YardSlot | null>(null);
+  const [movingSlot, setMovingSlot] = useState<{ trailerId: string; slotId: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
@@ -375,22 +378,26 @@ export const YardPage: React.FC = () => {
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => {
-                      setSelectedSlot(null);
-                      navigate(`/tracking`);
+                      if (selectedSlot.occupiedByTrailerId) {
+                        setMovingSlot({ trailerId: selectedSlot.occupiedByTrailerId, slotId: selectedSlot.id });
+                        setSelectedSlot(null);
+                      }
                     }}
-                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold text-center"
+                    className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-sm"
                   >
-                    Track Shipment
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>Re-Slot Trailer</span>
                   </button>
+
                   <button
                     onClick={() => {
                       setSelectedSlot(null);
                       navigate(`/control-tower`);
                     }}
-                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center justify-center space-x-1"
+                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center justify-center space-x-1 transition cursor-pointer shadow-sm"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Smart Allocation</span>
+                    <span>Smart Dock</span>
                   </button>
                 </div>
               </div>
@@ -401,6 +408,19 @@ export const YardPage: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Yard Move Modal */}
+      {movingSlot && (
+        <YardMoveModal
+          trailerId={movingSlot.trailerId}
+          currentSlotId={movingSlot.slotId}
+          onClose={() => setMovingSlot(null)}
+          onMoved={() => {
+            setMovingSlot(null);
+            fetchYardData();
+          }}
+        />
       )}
     </div>
   );

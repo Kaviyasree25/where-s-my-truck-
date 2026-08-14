@@ -67,6 +67,11 @@ export const api = {
     return res.data;
   },
 
+  createShipment: async (data: any): Promise<Shipment> => {
+    const res = await axios.post(`${API_BASE}/shipments`, data);
+    return res.data;
+  },
+
   // Customer Tracking
   getCustomerTracking: async (query: string): Promise<CustomerTrackingResponse> => {
     const res = await axios.get(`${API_BASE}/tracking/${query}`);
@@ -94,9 +99,19 @@ export const api = {
     return res.data;
   },
 
+  checkInTrailer: async (data: any) => {
+    const res = await axios.post(`${API_BASE}/trailers/check-in`, data);
+    return res.data;
+  },
+
   // Docks
   getDocks: async (): Promise<Dock[]> => {
     const res = await axios.get(`${API_BASE}/docks`);
+    return res.data;
+  },
+
+  createOrUpdateDock: async (dockData: any): Promise<Dock> => {
+    const res = await axios.post(`${API_BASE}/docks`, dockData);
     return res.data;
   },
 
@@ -108,6 +123,11 @@ export const api = {
   // Yard
   getYardState: async (): Promise<YardState> => {
     const res = await axios.get(`${API_BASE}/yard`);
+    return res.data;
+  },
+
+  moveYardTrailer: async (trailerId: string, toSlotId: string, operatorName?: string) => {
+    const res = await axios.post(`${API_BASE}/yard/move`, { trailerId, toSlotId, operatorName });
     return res.data;
   },
 
