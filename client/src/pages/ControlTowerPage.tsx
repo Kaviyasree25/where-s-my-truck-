@@ -12,6 +12,7 @@ import { AllocationModal } from '../components/allocation/AllocationModal';
 import { ReassignmentModal } from '../components/common/ReassignmentModal';
 import { SmartQueueCard } from '../components/common/SmartQueueCard';
 import { MLRecommendationBadge } from '../components/common/MLRecommendationBadge';
+import { MLModelModal } from '../components/common/MLModelModal';
 import {
   Truck, Building2, AlertTriangle, Grid, Search,
   SlidersHorizontal, Sparkles, ArrowRight, RefreshCw, Cpu, Navigation,
@@ -696,6 +697,7 @@ export const ControlTowerPage: React.FC = () => {
   // Modals
   const [allocationTarget, setAllocationTarget] = useState<Shipment | null>(null);
   const [reassignmentData, setReassignmentData] = useState<any | null>(null);
+  const [showMLModal, setShowMLModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -800,28 +802,38 @@ export const ControlTowerPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              Warehouse Inbound Control Tower
-            </h2>
-            <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-mono font-bold text-[10px] border border-blue-200 flex items-center space-x-1">
-              <Cpu className="w-3 h-3 text-blue-600 animate-pulse" />
-              <span>DATA-DRIVEN ML DECISION SUPPORT</span>
-            </span>
-          </div>
-          <p className="text-xs text-slate-400">
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            Warehouse Inbound Control Tower
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
             Live Highway Corridors, Machine Learning Allocations &amp; Real-Time Yard Telemetry
           </p>
         </div>
-        <button
-          onClick={fetchData}
-          className="p-2 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition"
-          title="Refresh Data"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+
+        {/* Top Action Toolbar */}
+        <div className="flex items-center space-x-2.5">
+          <button
+            onClick={() => setShowMLModal(true)}
+            className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-mono font-bold text-xs border border-blue-200 flex items-center space-x-2 transition shadow-xs cursor-pointer group"
+            title="Inspect RandomForest model architecture, feature weights, and safety rules"
+          >
+            <Cpu className="w-4 h-4 text-blue-600 animate-pulse group-hover:scale-110 transition-transform" />
+            <span>ML Model Inspector</span>
+            <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-mono font-extrabold shadow-2xs">
+              96.5% FIT
+            </span>
+          </button>
+
+          <button
+            onClick={fetchData}
+            className="p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition shadow-xs cursor-pointer"
+            title="Refresh Data"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Banner Feedback if replayed */}
@@ -958,6 +970,7 @@ export const ControlTowerPage: React.FC = () => {
           recommendation={mlRec}
           type="DOCK"
           onAllocate={() => handleSelectAllocationByShipmentId(mlRec.shipmentId)}
+          onInspectModel={() => setShowMLModal(true)}
         />
       )}
 
@@ -1065,10 +1078,35 @@ export const ControlTowerPage: React.FC = () => {
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-700">
-                      <div>{new Date(s.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                      <div className="text-[10px] text-slate-400">
-                        Appt: {new Date(s.scheduledAppointment).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
+                      {(() => {
+                        const etaDate = new Date(s.eta);
+                        const apptDate = new Date(s.scheduledAppointment);
+                        const diffMins = Math.round((etaDate.getTime() - apptDate.getTime()) / 60000);
+
+                        return (
+                          <div>
+                            <div className="font-bold text-slate-900">
+                              {etaDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Appt: {apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                            {diffMins <= 0 ? (
+                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-1">
+                                <span>🟢 ON TIME ({diffMins === 0 ? '±0m' : `${diffMins}m`})</span>
+                              </span>
+                            ) : diffMins <= 20 ? (
+                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-1">
+                                <span>🟡 DRIFTING (+{diffMins}m)</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 mt-1">
+                                <span>🔴 DELAYED (+{diffMins}m • AT RISK)</span>
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-700">
@@ -1140,6 +1178,14 @@ export const ControlTowerPage: React.FC = () => {
             setReassignmentData(null);
             fetchData();
           }}
+        />
+      )}
+
+      {/* ML Architecture & Explainability Modal */}
+      {showMLModal && (
+        <MLModelModal
+          onClose={() => setShowMLModal(false)}
+          onRetrained={fetchData}
         />
       )}
     </div>

@@ -40,6 +40,11 @@ export const api = {
     return res.data;
   },
 
+  getMLModelInfo: async () => {
+    const res = await axios.get(`${API_BASE}/ml/model-info`);
+    return res.data;
+  },
+
   trainMLModel: async () => {
     const res = await axios.post(`${API_BASE}/ml/train`);
     return res.data;
@@ -132,6 +137,11 @@ export const api = {
   // Analytics
   getAnalyticsKPIs: async (): Promise<AnalyticsKPIs> => {
     const res = await axios.get(`${API_BASE}/analytics/kpis`);
+    return res.data;
+  },
+
+  getAnalyticsHeatmap: async (): Promise<any> => {
+    const res = await axios.get(`${API_BASE}/analytics/heatmap`);
     return res.data;
   },
 

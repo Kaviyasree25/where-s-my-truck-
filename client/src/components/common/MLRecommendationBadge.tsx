@@ -1,17 +1,19 @@
 import React from 'react';
 import { MLRecommendationResponse } from '../../types';
-import { Cpu, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { Cpu, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Sparkles, Sliders, Info } from 'lucide-react';
 
 interface MLRecommendationBadgeProps {
   recommendation: MLRecommendationResponse;
   type: 'DOCK' | 'YARD';
   onAllocate?: () => void;
+  onInspectModel?: () => void;
 }
 
 export const MLRecommendationBadge: React.FC<MLRecommendationBadgeProps> = ({
   recommendation,
   type,
   onAllocate,
+  onInspectModel,
 }) => {
   const isDock = type === 'DOCK';
   const confidence = isDock ? recommendation.dockConfidencePct : recommendation.yardConfidencePct;
@@ -22,7 +24,7 @@ export const MLRecommendationBadge: React.FC<MLRecommendationBadgeProps> = ({
   return (
     <div className="bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl p-5 shadow-xl font-sans space-y-4">
       {/* Header Badge */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
             <Cpu className="w-4 h-4 animate-pulse" />
@@ -37,17 +39,30 @@ export const MLRecommendationBadge: React.FC<MLRecommendationBadgeProps> = ({
               </span>
             </div>
             <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
-              RandomForest Model • Safety Hard Constraints Active
+              RandomForest Ensemble • Safety Hard Constraints Active
             </span>
           </div>
         </div>
 
-        {/* Confidence Percentage Gauge */}
-        <div className="text-right">
-          <span className="text-[10px] uppercase font-mono text-slate-400 block">Model Confidence</span>
-          <span className="text-xl font-black font-mono text-emerald-400">
-            {confidence || 89}%
-          </span>
+        {/* Confidence Percentage & Inspect Button */}
+        <div className="flex items-center space-x-3">
+          {onInspectModel && (
+            <button
+              onClick={onInspectModel}
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-mono font-bold flex items-center space-x-1.5 transition"
+              title="Inspect ML Model Weights & Decision Tree Splits"
+            >
+              <Sliders className="w-3.5 h-3.5 text-blue-400" />
+              <span>Inspect AI Weights</span>
+            </button>
+          )}
+
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-mono text-slate-400 block">Model Fit</span>
+            <span className="text-lg font-black font-mono text-emerald-400">
+              {confidence || 89}%
+            </span>
+          </div>
         </div>
       </div>
 
@@ -97,40 +112,40 @@ export const MLRecommendationBadge: React.FC<MLRecommendationBadgeProps> = ({
               <>
                 <li className="flex items-center space-x-1.5 text-emerald-400">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span className="text-slate-300">1. Capability & Load Compatibility</span>
+                  <span className="text-slate-300">1. Capability &amp; Load Compatibility</span>
                 </li>
                 <li className="flex items-center space-x-1.5 text-emerald-400">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span className="text-slate-300">2. Low Queue & 0m Wait Time</span>
-                </li>
-                <li className="flex items-center space-x-1.5 text-emerald-400">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span className="text-slate-300">3. Short Yard Distance (35m)</span>
+                  <span className="text-slate-300">2. Low expected wait time</span>
                 </li>
               </>
             )}
           </ul>
         </div>
 
-        {/* Ranked Alternatives */}
+        {/* Alternative Candidate Ranking */}
         <div className="space-y-1.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
           <span className="text-[11px] font-bold text-slate-300 block uppercase tracking-wider">
-            Ranked Alternatives:
+            Alternative Candidate Ranking:
           </span>
-          <div className="space-y-1.5 text-[11px]">
-            {alternatives && alternatives.length > 0 ? (
-              alternatives.map((alt: any) => (
-                <div key={alt.dockId || alt.slotId} className="flex items-center justify-between text-slate-400 border-b border-slate-800/60 pb-1">
-                  <span>{alt.dockName || `Slot ${alt.slotId}`}</span>
-                  <span className="font-bold text-blue-400">{alt.confidencePct}%</span>
+          {alternatives && alternatives.length > 0 ? (
+            <div className="space-y-1.5">
+              {alternatives.map((alt: any, idx) => (
+                <div key={idx} className="flex items-center justify-between text-[11px] text-slate-300">
+                  <span>
+                    #{idx + 2} {isDock ? `Dock ${alt.dockId}` : `Slot ${alt.slotId}`}
+                  </span>
+                  <span className="text-slate-400 font-bold">{alt.confidencePct}% match</span>
                 </div>
-              ))
-            ) : (
-              <div className="text-slate-500 italic">No higher alternatives</div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-[11px] text-slate-500 italic">No alternative candidates feasible</div>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
+export default MLRecommendationBadge;
