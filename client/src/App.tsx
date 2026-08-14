@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
 import { DemoBar } from './components/common/DemoBar';
+import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { LoginPage } from './pages/LoginPage';
 import { ControlTowerPage } from './pages/ControlTowerPage';
 import { TrackingPage } from './pages/TrackingPage';
@@ -50,13 +51,14 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="h-screen bg-slate-50 text-slate-900 flex flex-col overflow-hidden">
       <Header />
       <DemoBar onSimulationTriggered={fetchExceptionsCount} />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         <Sidebar activeExceptionsCount={activeExceptionsCount} />
         <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+          <Breadcrumbs />
           <Routes>
             <Route path="/control-tower" element={<ControlTowerPage />} />
             <Route path="/tracking" element={<TrackingPage />} />

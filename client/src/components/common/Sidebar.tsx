@@ -12,6 +12,8 @@ import {
   UserCheck,
   Settings,
   LogOut,
+  Sliders,
+  ShieldAlert
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -60,10 +62,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
       roles: ['OPERATOR', 'MANAGER', 'ADMIN'],
     },
     {
-      name: 'Analytics',
+      name: 'Live Analytics',
       path: '/analytics',
       icon: BarChart3,
-      roles: ['MANAGER', 'ADMIN'],
+      roles: ['OPERATOR', 'MANAGER', 'ADMIN'],
+    },
+    {
+      name: 'Master Data & Admin',
+      path: '/admin',
+      icon: Settings,
+      roles: ['OPERATOR', 'MANAGER', 'ADMIN'],
     },
     {
       name: 'Customer Portal',
@@ -71,24 +79,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
       icon: UserCheck,
       roles: ['CUSTOMER', 'OPERATOR', 'MANAGER', 'ADMIN'],
     },
-    {
-      name: 'Master Data Admin',
-      path: '/admin',
-      icon: Settings,
-      roles: ['ADMIN'],
-    },
   ];
 
   const visibleItems = navigationItems.filter(item => item.roles.includes(currentRole));
 
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white flex flex-col justify-between p-4 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+    <aside className="w-64 shrink-0 border-r border-slate-200 bg-white flex flex-col justify-between p-4 h-full overflow-y-auto font-sans select-none">
       <div className="space-y-6">
         <div>
-          <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <span className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
             Operations Menu
           </span>
-          <nav className="mt-3 space-y-1">
+          <nav className="mt-2.5 space-y-1">
             {visibleItems.map(item => {
               const Icon = item.icon;
               return (
@@ -96,10 +98,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition ${
+                    `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                       isActive
-                        ? 'bg-blue-50 text-blue-600 font-semibold border border-blue-200 shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/80 shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
@@ -119,10 +121,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
         </div>
       </div>
 
-      <div className="border-t border-slate-200 pt-4">
+      <div className="border-t border-slate-200 pt-4 mt-auto shrink-0">
         <button
           onClick={logout}
-          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+          className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           <span>Exit Session</span>
@@ -131,3 +133,5 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
     </aside>
   );
 };
+
+export default Sidebar;
