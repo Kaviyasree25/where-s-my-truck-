@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { store } from '../db/store.js';
 import { allocationEngine } from '../services/allocationEngine.js';
 import { simulationService } from '../services/simulationService.js';
+import { getAllTrailerRoutes, getTrailerRouteDetails, resetTrailerPositions } from '../services/positionSimulator.js';
 
 const router = Router();
 
@@ -81,6 +82,20 @@ router.get('/tracking/:query', (req, res) => {
 // 4. Trailers
 router.get('/trailers', (req, res) => {
   res.json(store.getTrailers());
+});
+
+// 4b. Trailer positions — minimal snapshot for map initial load
+router.get('/trailers/positions', (req, res) => {
+  res.json(store.getTrailerPositions());
+});
+
+// 4c. Trailer Road Route Geometries (OSRM Waypoints for live tracking)
+router.get('/trailers/routes/all', (req, res) => {
+  res.json(getAllTrailerRoutes());
+});
+
+router.get('/trailers/:id/route', (req, res) => {
+  res.json(getTrailerRouteDetails(req.params.id));
 });
 
 // 5. Docks
@@ -266,6 +281,26 @@ router.post('/simulation/sensor-reset', (req, res) => {
   try {
     const result = simulationService.resetSensors();
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/simulation/reset-routes', (req, res) => {
+  try {
+    const result = resetTrailerPositions(simulationService.getSocketServer?.());
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/simulation/reset', (req, res) => {
+  try {
+    store.resetToDefaults();
+    resetTrailerPositions(simulationService.getSocketServer?.());
+    simulationService.broadcastStateChange({ reason: 'FULL_DEMO_RESET' });
+    res.json({ success: true, message: 'Full demo and trailer route positions reset' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

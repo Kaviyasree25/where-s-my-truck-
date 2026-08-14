@@ -10,6 +10,14 @@ export class SimulationService {
     this.io = io;
   }
 
+  public getSocketServer(): SocketIOServer | undefined {
+    return this.io;
+  }
+
+  public broadcastStateChange(payload: any) {
+    this.broadcastUpdate('DEMO_RESET_EVENT', payload);
+  }
+
   private broadcastUpdate(eventType: string, payload: any) {
     if (this.io) {
       this.io.emit(eventType, payload);

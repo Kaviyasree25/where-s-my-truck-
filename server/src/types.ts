@@ -78,6 +78,13 @@ export interface Trailer {
   demurrageRisk?: DemurrageRisk;
   scoreReason?: string;
   scoreBreakdown?: PriorityBreakdown;
+
+  // Live GPS / Position Simulator fields
+  currentLat?: number;
+  currentLng?: number;
+  destinationLat?: number;
+  destinationLng?: number;
+  headingDeg?: number;
 }
 
 export interface Carrier {

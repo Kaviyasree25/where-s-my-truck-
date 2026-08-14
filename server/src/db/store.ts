@@ -5,6 +5,7 @@ import {
   YardSlot,
   Trailer,
   Shipment,
+  ShipmentStatus,
   Appointment,
   Exception,
   AuditLog,
@@ -13,7 +14,11 @@ import {
   SmartQueueItem,
 } from '../types.js';
 import { priorityEngine } from '../services/priorityEngine.js';
-import { v4 as uuidv4 } from 'uuid';
+
+
+// Warehouse location: Naperville, IL (Chicago logistics hub)
+export const WAREHOUSE_LAT = 41.7508;
+export const WAREHOUSE_LNG = -88.1535;
 
 // Seed Users
 const INITIAL_USERS: User[] = [
@@ -88,13 +93,19 @@ const INITIAL_YARD_SLOTS: YardSlot[] = [
 
 // Seed Trailers
 const INITIAL_TRAILERS: Trailer[] = [
-  { id: 'TR-101', licensePlate: 'IL-9812-TX', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'DRY_VAN', status: 'AT_DOCK', assignedDockId: 'D01', shipmentId: 'SHP-1001', arrivedAt: '2026-08-13T14:15:00Z', dwellMinutes: 15 },
-  { id: 'TR-102', licensePlate: 'OH-4412-FL', carrierId: 'car-102', carrierName: 'SwiftHaul Freight', trailerType: 'FLATBED', status: 'AT_DOCK', assignedDockId: 'D03', shipmentId: 'SHP-1002', arrivedAt: '2026-08-13T14:50:00Z', dwellMinutes: 25 },
-  { id: 'TR-105', licensePlate: 'CA-7789-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A01', shipmentId: 'SHP-1005', arrivedAt: '2026-08-13T15:15:00Z', dwellMinutes: 45, inventoryUrgency: 50, etaVarianceMinutes: 5 },
-  { id: 'TR-106', licensePlate: 'CA-9921-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A42', shipmentId: 'SHP-1006', arrivedAt: '2026-08-13T13:41:00Z', dwellMinutes: 112, inventoryUrgency: 100, etaVarianceMinutes: 10 },
-  { id: 'TR-108', licensePlate: 'TX-3311-DV', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'DRY_VAN', status: 'IN_YARD', currentSlotId: 'A03', shipmentId: 'SHP-1003', arrivedAt: '2026-08-13T15:40:00Z', dwellMinutes: 20, inventoryUrgency: 20, etaVarianceMinutes: 0 },
-  { id: 'TR-110', licensePlate: 'WA-5544-CC', carrierId: 'car-104', carrierName: 'Prime ColdChain Inc', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'B01', shipmentId: 'SHP-1004', arrivedAt: '2026-08-13T14:00:00Z', dwellMinutes: 110, inventoryUrgency: 50, etaVarianceMinutes: 15 },
-  { id: 'TR-112', licensePlate: 'NJ-9012-HZ', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'HAZMAT', status: 'IN_YARD', currentSlotId: 'C01', shipmentId: 'SHP-1007', arrivedAt: '2026-08-13T15:45:00Z', dwellMinutes: 15, inventoryUrgency: 50, etaVarianceMinutes: 0 },
+  // --- AT_DOCK trailers (East Dock Doors Wing)
+  { id: 'TR-101', licensePlate: 'IL-9812-TX', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'DRY_VAN', status: 'AT_DOCK', assignedDockId: 'D01', shipmentId: 'SHP-1001', arrivedAt: '2026-08-13T14:15:00Z', dwellMinutes: 15, currentLat: 41.7516, currentLng: -88.1500, destinationLat: 41.7516, destinationLng: -88.1500, headingDeg: 90 },
+  { id: 'TR-102', licensePlate: 'OH-4412-FL', carrierId: 'car-102', carrierName: 'SwiftHaul Freight', trailerType: 'FLATBED', status: 'AT_DOCK', assignedDockId: 'D03', shipmentId: 'SHP-1002', arrivedAt: '2026-08-13T14:50:00Z', dwellMinutes: 25, currentLat: 41.7498, currentLng: -88.1500, destinationLat: 41.7498, destinationLng: -88.1500, headingDeg: 90 },
+  // --- IN_YARD trailers (Distributed across Yard Zones A, B, C)
+  { id: 'TR-105', licensePlate: 'CA-7789-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A01', shipmentId: 'SHP-1005', arrivedAt: '2026-08-13T15:15:00Z', dwellMinutes: 45, inventoryUrgency: 50, etaVarianceMinutes: 5, currentLat: 41.7540, currentLng: -88.1545, destinationLat: 41.7508, destinationLng: -88.1535, headingDeg: 0 },
+  { id: 'TR-106', licensePlate: 'CA-9921-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A42', shipmentId: 'SHP-1006', arrivedAt: '2026-08-13T13:41:00Z', dwellMinutes: 112, inventoryUrgency: 100, etaVarianceMinutes: 10, currentLat: 41.7532, currentLng: -88.1520, destinationLat: 41.7508, destinationLng: -88.1535, headingDeg: 0 },
+  { id: 'TR-108', licensePlate: 'TX-3311-DV', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'DRY_VAN', status: 'IN_YARD', currentSlotId: 'A03', shipmentId: 'SHP-1003', arrivedAt: '2026-08-13T15:40:00Z', dwellMinutes: 20, inventoryUrgency: 20, etaVarianceMinutes: 0, currentLat: 41.7475, currentLng: -88.1545, destinationLat: 41.7508, destinationLng: -88.1535, headingDeg: 180 },
+  { id: 'TR-110', licensePlate: 'WA-5544-CC', carrierId: 'car-104', carrierName: 'Prime ColdChain Inc', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'B01', shipmentId: 'SHP-1004', arrivedAt: '2026-08-13T14:00:00Z', dwellMinutes: 110, inventoryUrgency: 50, etaVarianceMinutes: 15, currentLat: 41.7482, currentLng: -88.1570, destinationLat: 41.7508, destinationLng: -88.1535, headingDeg: 270 },
+  { id: 'TR-112', licensePlate: 'NJ-9012-HZ', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'HAZMAT', status: 'IN_YARD', currentSlotId: 'C01', shipmentId: 'SHP-1007', arrivedAt: '2026-08-13T15:45:00Z', dwellMinutes: 15, inventoryUrgency: 50, etaVarianceMinutes: 0, currentLat: 41.7538, currentLng: -88.1575, destinationLat: 41.7508, destinationLng: -88.1535, headingDeg: 315 },
+  // --- EN_ROUTE trailers (approaching warehouse directly into designated Dock Doors)
+  { id: 'TR-201', licensePlate: 'MN-3310-DV', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'DRY_VAN', status: 'EN_ROUTE', shipmentId: 'SHP-1008', dwellMinutes: 0, inventoryUrgency: 20, etaVarianceMinutes: 0, currentLat: 43.0500, currentLng: -87.9100, destinationLat: 41.7516, destinationLng: -88.1500, headingDeg: 180 },
+  { id: 'TR-202', licensePlate: 'IN-7744-RF', carrierId: 'car-104', carrierName: 'Prime ColdChain Inc', trailerType: 'REFRIGERATED', status: 'EN_ROUTE', shipmentId: 'SHP-1009', dwellMinutes: 0, inventoryUrgency: 100, etaVarianceMinutes: 15, currentLat: 39.7684, currentLng: -86.1580, destinationLat: 41.7498, destinationLng: -88.1500, headingDeg: 315 },
+  { id: 'TR-203', licensePlate: 'MI-5512-FB', carrierId: 'car-102', carrierName: 'SwiftHaul Freight', trailerType: 'FLATBED', status: 'EN_ROUTE', shipmentId: 'SHP-1010', dwellMinutes: 0, inventoryUrgency: 50, etaVarianceMinutes: 5, currentLat: 42.3314, currentLng: -83.0460, destinationLat: 41.7508, destinationLng: -88.1535, headingDeg: 270 },
 ];
 
 // Seed Shipments
@@ -235,6 +246,64 @@ const INITIAL_SHIPMENTS: Shipment[] = [
   },
 ];
 
+// EN_ROUTE shipments for map trailers
+const INITIAL_EN_ROUTE_SHIPMENTS: Shipment[] = [
+  {
+    id: 'SHP-1008',
+    trackingNumber: 'TRK-700341',
+    carrierId: 'car-103',
+    carrierName: 'TransRoute Express',
+    supplier: 'Midwest Consumer Goods',
+    origin: 'Minneapolis Distribution Center, MN',
+    destination: 'Main Facility - Bay A',
+    priority: 'STANDARD',
+    loadType: 'DRY_VAN',
+    status: 'IN_TRANSIT',
+    risk: 'NORMAL',
+    eta: new Date(Date.now() + 90 * 60 * 1000).toISOString(),
+    scheduledAppointment: new Date(Date.now() + 100 * 60 * 1000).toISOString(),
+    trailerId: 'TR-201',
+    itemsSummary: '48 Pallets Consumer Packaged Goods',
+    totalWeightKg: 18200,
+  },
+  {
+    id: 'SHP-1009',
+    trackingNumber: 'TRK-810952',
+    carrierId: 'car-104',
+    carrierName: 'Prime ColdChain Inc',
+    supplier: 'Apex Retail Supplier (Pharma & Cold Goods)',
+    origin: 'Indianapolis Cold Hub, IN',
+    destination: 'Main Facility - Bay A',
+    priority: 'CRITICAL',
+    loadType: 'REFRIGERATED',
+    status: 'IN_TRANSIT',
+    risk: 'WARNING',
+    eta: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
+    scheduledAppointment: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    trailerId: 'TR-202',
+    itemsSummary: '20 Pallets Frozen Pharmaceuticals (-20°C Required)',
+    totalWeightKg: 9800,
+  },
+  {
+    id: 'SHP-1010',
+    trackingNumber: 'TRK-920115',
+    carrierId: 'car-102',
+    carrierName: 'SwiftHaul Freight',
+    supplier: 'Industrial Machinery Corp',
+    origin: 'Detroit Plant, MI',
+    destination: 'Main Facility - Bay A',
+    priority: 'HIGH',
+    loadType: 'FLATBED',
+    status: 'IN_TRANSIT',
+    risk: 'NORMAL',
+    eta: new Date(Date.now() + 120 * 60 * 1000).toISOString(),
+    scheduledAppointment: new Date(Date.now() + 130 * 60 * 1000).toISOString(),
+    trailerId: 'TR-203',
+    itemsSummary: '4 Heavy Press Machine Frames',
+    totalWeightKg: 31000,
+  },
+];
+
 // Seed Appointments
 const INITIAL_APPOINTMENTS: Appointment[] = [
   { id: 'APT-1001', shipmentId: 'SHP-1001', trailerId: 'TR-101', carrierName: 'BlueLine Logistics', scheduledArrival: '2026-08-13T14:30:00Z', actualArrival: '2026-08-13T14:15:00Z', priority: 'HIGH', status: 'ON_TIME', deviationMinutes: -15 },
@@ -299,7 +368,7 @@ class DataStore {
     this.docks = JSON.parse(JSON.stringify(INITIAL_DOCKS));
     this.yardSlots = JSON.parse(JSON.stringify(INITIAL_YARD_SLOTS));
     this.trailers = JSON.parse(JSON.stringify(INITIAL_TRAILERS));
-    this.shipments = JSON.parse(JSON.stringify(INITIAL_SHIPMENTS));
+    this.shipments = JSON.parse(JSON.stringify([...INITIAL_SHIPMENTS, ...INITIAL_EN_ROUTE_SHIPMENTS]));
     this.appointments = JSON.parse(JSON.stringify(INITIAL_APPOINTMENTS));
     this.exceptions = JSON.parse(JSON.stringify(INITIAL_EXCEPTIONS));
     this.auditLogs = JSON.parse(JSON.stringify(INITIAL_AUDIT_LOGS));
@@ -333,6 +402,42 @@ class DataStore {
   // Trailers
   public getTrailers(): Trailer[] { return this.trailers; }
   public getTrailerById(id: string): Trailer | undefined { return this.trailers.find(t => t.id === id); }
+
+  // Update positions for EN_ROUTE trailers (called by positionSimulator tick)
+  public updateTrailerPositions(updatedTrailers: Trailer[]) {
+    for (const updated of updatedTrailers) {
+      const t = this.trailers.find(x => x.id === updated.id);
+      if (t) {
+        t.currentLat = updated.currentLat;
+        t.currentLng = updated.currentLng;
+        t.headingDeg = updated.headingDeg;
+      }
+    }
+  }
+
+  // Get minimal position data for all trailers (for map initial load)
+  public getTrailerPositions() {
+    return this.trailers.map(t => {
+      const shipment = this.shipments.find(s => s.trailerId === t.id);
+      const hasActiveException = shipment?.activeExceptionId !== undefined ||
+        this.exceptions.some(e => (e.trailerId === t.id) && e.status === 'ACTIVE');
+      return {
+        id: t.id,
+        lat: t.currentLat,
+        lng: t.currentLng,
+        heading: t.headingDeg,
+        status: t.status,
+        trailerType: t.trailerType,
+        shipmentId: t.shipmentId,
+        carrierName: t.carrierName,
+        priority: shipment?.priority,
+        risk: shipment?.risk,
+        eta: shipment?.eta,
+        demurrageRisk: t.demurrageRisk,
+        hasActiveException,
+      };
+    });
+  }
 
   // Shipments
   public getShipments(): Shipment[] { return this.shipments; }
