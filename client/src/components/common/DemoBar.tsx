@@ -109,6 +109,20 @@ export const DemoBar: React.FC<DemoBarProps> = ({ onSimulationTriggered }) => {
           <span>Simulate Congestion (&gt;80%)</span>
         </button>
 
+        {/* Reset Highway Routes */}
+        <button
+          disabled={!!loadingAction}
+          onClick={() => handleAction('Replay Truck Routes', () => api.resetRoutes())}
+          className="flex items-center space-x-1.5 px-3 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition disabled:opacity-50 font-medium"
+        >
+          {loadingAction === 'Replay Truck Routes' ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
+          )}
+          <span>Replay Truck Routes</span>
+        </button>
+
         {/* Reset Demo State */}
         <button
           disabled={!!loadingAction}

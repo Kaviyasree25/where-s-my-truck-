@@ -74,6 +74,21 @@ export const api = {
     return res.data;
   },
 
+  getTrailerPositions: async () => {
+    const res = await axios.get(`${API_BASE}/trailers/positions`);
+    return res.data;
+  },
+
+  getAllTrailerRoutes: async (): Promise<Record<string, [number, number][]>> => {
+    const res = await axios.get(`${API_BASE}/trailers/routes/all`);
+    return res.data;
+  },
+
+  getTrailerRoute: async (trailerId: string) => {
+    const res = await axios.get(`${API_BASE}/trailers/${trailerId}/route`);
+    return res.data;
+  },
+
   // Docks
   getDocks: async (): Promise<Dock[]> => {
     const res = await axios.get(`${API_BASE}/docks`);
@@ -181,6 +196,11 @@ export const api = {
 
   resetSensors: async () => {
     const res = await axios.post(`${API_BASE}/simulation/sensor-reset`);
+    return res.data;
+  },
+
+  resetRoutes: async () => {
+    const res = await axios.post(`${API_BASE}/simulation/reset-routes`);
     return res.data;
   },
 
