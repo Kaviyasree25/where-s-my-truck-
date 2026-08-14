@@ -11,6 +11,8 @@ import {
   CustomerTrackingResponse,
   User,
   Trailer,
+  SmartQueueItem,
+  MLRecommendationResponse,
 } from '../types';
 
 const API_BASE = '/api';
@@ -19,6 +21,33 @@ export const api = {
   // Users
   getUsers: async (): Promise<User[]> => {
     const res = await axios.get(`${API_BASE}/users`);
+    return res.data;
+  },
+
+  // Machine Learning Recommendations
+  getMLRecommendation: async (trailerId: string = 'TR-106'): Promise<MLRecommendationResponse> => {
+    const res = await axios.get(`${API_BASE}/recommendations/${trailerId}`);
+    return res.data;
+  },
+
+  getMLDockRecommendation: async (trailerId: string = 'TR-106') => {
+    const res = await axios.post(`${API_BASE}/recommendations/dock`, { trailerId });
+    return res.data;
+  },
+
+  getMLYardRecommendation: async (trailerId: string = 'TR-106') => {
+    const res = await axios.post(`${API_BASE}/recommendations/yard`, { trailerId });
+    return res.data;
+  },
+
+  trainMLModel: async () => {
+    const res = await axios.post(`${API_BASE}/ml/train`);
+    return res.data;
+  },
+
+  // Smart Queue
+  getSmartQueue: async (): Promise<SmartQueueItem[]> => {
+    const res = await axios.get(`${API_BASE}/smart-queue`);
     return res.data;
   },
 
@@ -137,6 +166,21 @@ export const api = {
 
   simulateCompleteUnloading: async (shipmentId: string = 'SHP-1005') => {
     const res = await axios.post(`${API_BASE}/simulation/complete-unloading`, { shipmentId });
+    return res.data;
+  },
+
+  simulateSensorMatch: async (slotId: string = 'A42') => {
+    const res = await axios.post(`${API_BASE}/simulation/sensor-match`, { slotId });
+    return res.data;
+  },
+
+  simulateSensorMismatch: async (slotId: string = 'A42') => {
+    const res = await axios.post(`${API_BASE}/simulation/sensor-mismatch`, { slotId });
+    return res.data;
+  },
+
+  resetSensors: async () => {
+    const res = await axios.post(`${API_BASE}/simulation/sensor-reset`);
     return res.data;
   },
 

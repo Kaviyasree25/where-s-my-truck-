@@ -1,5 +1,6 @@
 import { store } from '../db/store.js';
 import { allocationEngine } from './allocationEngine.js';
+import { mlRecommendationService } from './mlRecommendationService.js';
 import { Server as SocketIOServer } from 'socket.io';
 
 export class SimulationService {
@@ -16,6 +17,9 @@ export class SimulationService {
         timestamp: new Date().toISOString(),
         kpis: store.getAnalyticsKPIs(),
       });
+
+      // Automatically recalculate ML recommendations for all trailers when operational conditions change
+      mlRecommendationService.recalculateAndBroadcast(this.io);
     }
   }
 
@@ -167,12 +171,27 @@ export class SimulationService {
       shipment.currentDockId = undefined;
     }
 
-    shipment.status = 'COMPLETED';
-    store.addTrackingEvent(shipment.id, 'COMPLETED', 'Warehouse Bay A', 'Inbound processing & puts complete. Received into inventory.', 'Warehouse Operator');
-
     const payload = { shipmentId, status: 'COMPLETED' };
     this.broadcastUpdate('STATUS_UPDATE_EVENT', payload);
     return payload;
+  }
+
+  public simulateSensorMatch(slotId: string = 'A42') {
+    const result = store.simulateSensorMatch(slotId);
+    this.broadcastUpdate('SENSOR_MATCH_EVENT', { slotId, ...result });
+    return result;
+  }
+
+  public simulateSensorMismatch(slotId: string = 'A42') {
+    const result = store.simulateSensorMismatch(slotId);
+    this.broadcastUpdate('SENSOR_MISMATCH_EVENT', { slotId, ...result });
+    return result;
+  }
+
+  public resetSensors() {
+    const result = store.resetSensors();
+    this.broadcastUpdate('SENSOR_RESET_EVENT', result);
+    return result;
   }
 
   public resetDemo() {

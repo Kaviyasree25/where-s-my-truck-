@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { getSocket } from '../services/socket';
-import { Shipment, AnalyticsKPIs } from '../types';
+import { Shipment, AnalyticsKPIs, SmartQueueItem, MLRecommendationResponse } from '../types';
 import { KPICard } from '../components/common/KPICard';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { AllocationModal } from '../components/allocation/AllocationModal';
 import { ReassignmentModal } from '../components/common/ReassignmentModal';
+import { SmartQueueCard } from '../components/common/SmartQueueCard';
+import { MLRecommendationBadge } from '../components/common/MLRecommendationBadge';
 import {
   Truck,
   Building2,
@@ -18,10 +20,13 @@ import {
   Sparkles,
   ArrowRight,
   RefreshCw,
+  Cpu,
 } from 'lucide-react';
 
 export const ControlTowerPage: React.FC = () => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [smartQueue, setSmartQueue] = useState<SmartQueueItem[]>([]);
+  const [mlRec, setMlRec] = useState<MLRecommendationResponse | null>(null);
   const [kpis, setKpis] = useState<AnalyticsKPIs | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
@@ -48,30 +53,58 @@ export const ControlTowerPage: React.FC = () => {
       fetchData();
     };
 
+    const onRecommendationsUpdated = (payload: any) => {
+      if (payload?.recommendations && payload.recommendations.length > 0) {
+        setMlRec(payload.recommendations[0]);
+      }
+      fetchData();
+    };
+
     socket.on('DOCK_FAILURE_EVENT', onDockFailure);
     socket.on('OPERATIONAL_STATE_CHANGED', onOperationalChange);
     socket.on('DEMO_RESET_EVENT', onOperationalChange);
+    socket.on('SENSOR_MATCH_EVENT', onOperationalChange);
+    socket.on('SENSOR_MISMATCH_EVENT', onOperationalChange);
+    socket.on('RECOMMENDATIONS_UPDATED', onRecommendationsUpdated);
 
     return () => {
       socket.off('DOCK_FAILURE_EVENT', onDockFailure);
       socket.off('OPERATIONAL_STATE_CHANGED', onOperationalChange);
       socket.off('DEMO_RESET_EVENT', onOperationalChange);
+      socket.off('SENSOR_MATCH_EVENT', onOperationalChange);
+      socket.off('SENSOR_MISMATCH_EVENT', onOperationalChange);
+      socket.off('RECOMMENDATIONS_UPDATED', onRecommendationsUpdated);
     };
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [shipmentList, kpiData] = await Promise.all([
+      const [shipmentList, kpiData, queueData, mlData] = await Promise.all([
         api.getShipments(),
         api.getAnalyticsKPIs(),
+        api.getSmartQueue(),
+        api.getMLRecommendation('TR-106'),
       ]);
       setShipments(shipmentList);
       setKpis(kpiData);
+      setSmartQueue(queueData);
+      setMlRec(mlData);
     } catch (err) {
       console.error('Error fetching control tower data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectAllocationByShipmentId = (shipmentId: string) => {
+    const target = shipments.find(s => s.id === shipmentId || s.trailerId === shipmentId);
+    if (target) {
+      setAllocationTarget(target);
+    } else {
+      api.getShipmentById(shipmentId).then(shp => {
+        if (shp) setAllocationTarget(shp);
+      }).catch(err => console.error('Shipment not found:', err));
     }
   };
 
@@ -92,11 +125,17 @@ export const ControlTowerPage: React.FC = () => {
       {/* Top Section Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-            Warehouse Inbound Control Tower
-          </h2>
+          <div className="flex items-center space-x-2">
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              Warehouse Inbound Control Tower
+            </h2>
+            <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-mono font-bold text-[10px] border border-blue-200 flex items-center space-x-1">
+              <Cpu className="w-3 h-3 text-blue-600 animate-pulse" />
+              <span>DATA-DRIVEN ML DECISION SUPPORT</span>
+            </span>
+          </div>
           <p className="text-xs text-slate-400">
-            Real-Time Inbound Operations, Dock Availability & Active Exception Overview
+            Real-Time Inbound Operations, Trained Machine Learning Recommendations & Active Exceptions
           </p>
         </div>
         <button
@@ -152,6 +191,21 @@ export const ControlTowerPage: React.FC = () => {
           />
         </div>
       )}
+
+      {/* AUTOMATED ML RECOMMENDATION BANNER */}
+      {mlRec && (
+        <MLRecommendationBadge
+          recommendation={mlRec}
+          type="DOCK"
+          onAllocate={() => handleSelectAllocationByShipmentId(mlRec.shipmentId)}
+        />
+      )}
+
+      {/* FEATURE 1 & 2: Smart Dynamic Trailer Priority Queue Component */}
+      <SmartQueueCard
+        queue={smartQueue}
+        onSelectAllocation={handleSelectAllocationByShipmentId}
+      />
 
       {/* Table Filter & Search Bar */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">

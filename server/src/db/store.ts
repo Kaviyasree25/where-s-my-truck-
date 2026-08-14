@@ -10,7 +10,9 @@ import {
   AuditLog,
   TrackingEvent,
   AnalyticsKPIs,
+  SmartQueueItem,
 } from '../types.js';
+import { priorityEngine } from '../services/priorityEngine.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Seed Users
@@ -69,28 +71,30 @@ const INITIAL_DOCKS: Dock[] = [
 
 // Seed Yard Slots
 const INITIAL_YARD_SLOTS: YardSlot[] = [
-  { id: 'A01', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '01', status: 'OCCUPIED', occupiedByTrailerId: 'TR-105', trailerType: 'REFRIGERATED', dwellMinutes: 45 },
-  { id: 'A02', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '02', status: 'AVAILABLE' },
-  { id: 'A03', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '03', status: 'OCCUPIED', occupiedByTrailerId: 'TR-108', trailerType: 'DRY_VAN', dwellMinutes: 20 },
-  { id: 'A04', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '04', status: 'AVAILABLE' },
-  { id: 'B01', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '01', status: 'OCCUPIED', occupiedByTrailerId: 'TR-110', trailerType: 'REFRIGERATED', dwellMinutes: 110 },
-  { id: 'B02', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '02', status: 'AVAILABLE' },
-  { id: 'B03', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '03', status: 'AVAILABLE' },
-  { id: 'B04', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '04', status: 'AVAILABLE' },
-  { id: 'C01', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '01', status: 'OCCUPIED', occupiedByTrailerId: 'TR-112', trailerType: 'HAZMAT', dwellMinutes: 15 },
-  { id: 'C02', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '02', status: 'AVAILABLE' },
-  { id: 'C03', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '03', status: 'AVAILABLE' },
-  { id: 'C04', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '04', status: 'AVAILABLE' },
+  { id: 'A01', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '01', status: 'OCCUPIED', occupiedByTrailerId: 'TR-105', trailerType: 'REFRIGERATED', dwellMinutes: 45, sensorTrailerId: 'TR-105', rtlsTrailerId: 'TR-105', yardMuleTrailerId: 'TR-105', locationValidationStatus: 'VERIFIED' },
+  { id: 'A02', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '02', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'A03', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '03', status: 'OCCUPIED', occupiedByTrailerId: 'TR-108', trailerType: 'DRY_VAN', dwellMinutes: 20, sensorTrailerId: 'TR-108', rtlsTrailerId: 'TR-108', yardMuleTrailerId: 'TR-108', locationValidationStatus: 'VERIFIED' },
+  { id: 'A04', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Dry', slotNumber: '04', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'A42', zoneId: 'ZONE_A', zoneName: 'Zone A - Inbound Cold & Express', slotNumber: '42', status: 'OCCUPIED', occupiedByTrailerId: 'TR-106', trailerType: 'REFRIGERATED', dwellMinutes: 112, sensorTrailerId: 'TR-106', rtlsTrailerId: 'TR-106', yardMuleTrailerId: 'TR-106', locationValidationStatus: 'VERIFIED' },
+  { id: 'B01', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '01', status: 'OCCUPIED', occupiedByTrailerId: 'TR-110', trailerType: 'REFRIGERATED', dwellMinutes: 110, sensorTrailerId: 'TR-110', rtlsTrailerId: 'TR-110', yardMuleTrailerId: 'TR-110', locationValidationStatus: 'VERIFIED' },
+  { id: 'B02', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '02', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'B03', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '03', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'B04', zoneId: 'ZONE_B', zoneName: 'Zone B - Cold Storage Buffer', slotNumber: '04', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'C01', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '01', status: 'OCCUPIED', occupiedByTrailerId: 'TR-112', trailerType: 'HAZMAT', dwellMinutes: 15, sensorTrailerId: 'TR-112', rtlsTrailerId: 'TR-112', yardMuleTrailerId: 'TR-112', locationValidationStatus: 'VERIFIED' },
+  { id: 'C02', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '02', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'C03', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '03', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
+  { id: 'C04', zoneId: 'ZONE_C', zoneName: 'Zone C - Overflow & Staging', slotNumber: '04', status: 'AVAILABLE', locationValidationStatus: 'UNVALIDATED' },
 ];
 
 // Seed Trailers
 const INITIAL_TRAILERS: Trailer[] = [
-  { id: 'TR-101', licensePlate: 'IL-9812-TX', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'DRY_VAN', status: 'AT_DOCK', assignedDockId: 'D01', shipmentId: 'SHP-1001', arrivedAt: '2026-08-13T14:15:00Z' },
-  { id: 'TR-102', licensePlate: 'OH-4412-FL', carrierId: 'car-102', carrierName: 'SwiftHaul Freight', trailerType: 'FLATBED', status: 'AT_DOCK', assignedDockId: 'D03', shipmentId: 'SHP-1002', arrivedAt: '2026-08-13T14:50:00Z' },
-  { id: 'TR-105', licensePlate: 'CA-7789-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A01', shipmentId: 'SHP-1005', arrivedAt: '2026-08-13T15:15:00Z' },
-  { id: 'TR-108', licensePlate: 'TX-3311-DV', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'DRY_VAN', status: 'IN_YARD', currentSlotId: 'A03', shipmentId: 'SHP-1003', arrivedAt: '2026-08-13T15:40:00Z' },
-  { id: 'TR-110', licensePlate: 'WA-5544-CC', carrierId: 'car-104', carrierName: 'Prime ColdChain Inc', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'B01', shipmentId: 'SHP-1004', arrivedAt: '2026-08-13T14:00:00Z' },
-  { id: 'TR-112', licensePlate: 'NJ-9012-HZ', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'HAZMAT', status: 'IN_YARD', currentSlotId: 'C01', shipmentId: 'SHP-1006', arrivedAt: '2026-08-13T15:45:00Z' },
+  { id: 'TR-101', licensePlate: 'IL-9812-TX', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'DRY_VAN', status: 'AT_DOCK', assignedDockId: 'D01', shipmentId: 'SHP-1001', arrivedAt: '2026-08-13T14:15:00Z', dwellMinutes: 15 },
+  { id: 'TR-102', licensePlate: 'OH-4412-FL', carrierId: 'car-102', carrierName: 'SwiftHaul Freight', trailerType: 'FLATBED', status: 'AT_DOCK', assignedDockId: 'D03', shipmentId: 'SHP-1002', arrivedAt: '2026-08-13T14:50:00Z', dwellMinutes: 25 },
+  { id: 'TR-105', licensePlate: 'CA-7789-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A01', shipmentId: 'SHP-1005', arrivedAt: '2026-08-13T15:15:00Z', dwellMinutes: 45, inventoryUrgency: 50, etaVarianceMinutes: 5 },
+  { id: 'TR-106', licensePlate: 'CA-9921-RF', carrierId: 'car-101', carrierName: 'BlueLine Logistics', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'A42', shipmentId: 'SHP-1006', arrivedAt: '2026-08-13T13:41:00Z', dwellMinutes: 112, inventoryUrgency: 100, etaVarianceMinutes: 10 },
+  { id: 'TR-108', licensePlate: 'TX-3311-DV', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'DRY_VAN', status: 'IN_YARD', currentSlotId: 'A03', shipmentId: 'SHP-1003', arrivedAt: '2026-08-13T15:40:00Z', dwellMinutes: 20, inventoryUrgency: 20, etaVarianceMinutes: 0 },
+  { id: 'TR-110', licensePlate: 'WA-5544-CC', carrierId: 'car-104', carrierName: 'Prime ColdChain Inc', trailerType: 'REFRIGERATED', status: 'IN_YARD', currentSlotId: 'B01', shipmentId: 'SHP-1004', arrivedAt: '2026-08-13T14:00:00Z', dwellMinutes: 110, inventoryUrgency: 50, etaVarianceMinutes: 15 },
+  { id: 'TR-112', licensePlate: 'NJ-9012-HZ', carrierId: 'car-103', carrierName: 'TransRoute Express', trailerType: 'HAZMAT', status: 'IN_YARD', currentSlotId: 'C01', shipmentId: 'SHP-1007', arrivedAt: '2026-08-13T15:45:00Z', dwellMinutes: 15, inventoryUrgency: 50, etaVarianceMinutes: 0 },
 ];
 
 // Seed Shipments
@@ -134,8 +138,8 @@ const INITIAL_SHIPMENTS: Shipment[] = [
     totalWeightKg: 22800,
   },
   {
-    id: 'SHP-1005',
-    trackingNumber: 'TRK-984210',
+    id: 'SHP-1006',
+    trackingNumber: 'TRK-992106',
     carrierId: 'car-101',
     carrierName: 'BlueLine Logistics',
     supplier: 'Apex Retail Supplier (Pharma & Cold Goods)',
@@ -145,6 +149,25 @@ const INITIAL_SHIPMENTS: Shipment[] = [
     loadType: 'REFRIGERATED',
     status: 'IN_YARD',
     risk: 'WARNING',
+    eta: '2026-08-13T15:15:00Z',
+    scheduledAppointment: '2026-08-13T15:30:00Z',
+    trailerId: 'TR-106',
+    currentYardSlotId: 'A42',
+    itemsSummary: '24 Pallets Critical Perishable / Frozen Goods (-20°C Required)',
+    totalWeightKg: 12400,
+  },
+  {
+    id: 'SHP-1005',
+    trackingNumber: 'TRK-984210',
+    carrierId: 'car-101',
+    carrierName: 'BlueLine Logistics',
+    supplier: 'Apex Retail Supplier (Pharma & Cold Goods)',
+    origin: 'Sacramento Logistics Hub, CA',
+    destination: 'Main Facility - Bay A',
+    priority: 'HIGH',
+    loadType: 'REFRIGERATED',
+    status: 'IN_YARD',
+    risk: 'NORMAL',
     eta: '2026-08-13T15:15:00Z',
     scheduledAppointment: '2026-08-13T15:30:00Z',
     trailerId: 'TR-105',
@@ -192,7 +215,7 @@ const INITIAL_SHIPMENTS: Shipment[] = [
     activeExceptionId: 'EX-101',
   },
   {
-    id: 'SHP-1006',
+    id: 'SHP-1007',
     trackingNumber: 'TRK-600774',
     carrierId: 'car-103',
     carrierName: 'TransRoute Express',
@@ -517,6 +540,87 @@ class DataStore {
       onTimeArrivalRatePercent: 92,
       activeExceptionsCount,
     };
+  }
+
+  // Feature 1: Smart Dynamic Trailer Priority Queue
+  public getSmartPriorityQueue(): SmartQueueItem[] {
+    // Get all trailers currently in yard waiting for dock assignment
+    const waitingTrailers = this.trailers.filter(t => t.status === 'IN_YARD');
+
+    const queueItems: SmartQueueItem[] = waitingTrailers.map(trailer => {
+      const shipment = this.shipments.find(s => s.id === trailer.shipmentId || s.trailerId === trailer.id);
+      return priorityEngine.evaluateTrailerPriority(trailer, shipment);
+    });
+
+    // Reorder queue dynamically based on priority score descending
+    return queueItems.sort((a, b) => b.priorityScore - a.priorityScore);
+  }
+
+  // Feature 3: Software-Simulated Yard Sensor Location Validation
+  public simulateSensorMatch(slotId: string = 'A42') {
+    const slot = this.yardSlots.find(s => s.id === slotId);
+    if (!slot) throw new Error(`Yard Slot ${slotId} not found`);
+
+    const expectedTrailerId = slot.occupiedByTrailerId || 'TR-106';
+
+    slot.sensorTrailerId = expectedTrailerId;
+    slot.rtlsTrailerId = expectedTrailerId;
+    slot.yardMuleTrailerId = expectedTrailerId;
+    slot.locationValidationStatus = 'VERIFIED';
+
+    // Resolve any active YARD_LOCATION_MISMATCH exception for this slot
+    const mismatchEx = this.exceptions.find(e => e.type === 'YARD_LOCATION_MISMATCH' && e.yardSlotId === slotId && e.status === 'ACTIVE');
+    if (mismatchEx) {
+      this.resolveException(mismatchEx.id, `Operator/Sensor Re-validation Confirmed: All signals (IoT, RTLS, Yard Mule) match ${expectedTrailerId}`);
+    }
+
+    this.addAuditLog('YARD_SENSOR', slot.id, 'LOCATION_VERIFIED', 'System / Operator', `Location verified for Yard Slot ${slot.id}: IoT, RTLS, and Yard Mule signals all confirm ${expectedTrailerId}`);
+
+    return { slot, status: 'VERIFIED' };
+  }
+
+  public simulateSensorMismatch(slotId: string = 'A42') {
+    const slot = this.yardSlots.find(s => s.id === slotId);
+    if (!slot) throw new Error(`Yard Slot ${slotId} not found`);
+
+    const expectedTrailerId = slot.occupiedByTrailerId || 'TR-106';
+    const conflictingTrailerId = 'TR-107';
+
+    slot.sensorTrailerId = expectedTrailerId;
+    slot.rtlsTrailerId = expectedTrailerId;
+    slot.yardMuleTrailerId = conflictingTrailerId; // MISMATCH!
+    slot.locationValidationStatus = 'MISMATCH';
+
+    // Create YARD_LOCATION_MISMATCH exception
+    const exception = this.createException({
+      trailerId: expectedTrailerId,
+      yardSlotId: slot.id,
+      type: 'YARD_LOCATION_MISMATCH',
+      severity: 'HIGH',
+      title: `YARD LOCATION MISMATCH on Slot ${slot.id}`,
+      description: `Discrepancy detected at Slot ${slot.id}: IoT Sensor & RTLS detect ${expectedTrailerId}, but Yard Mule confirmed ${conflictingTrailerId}. Action required by yard operator.`,
+      recommendedAction: 'Verify physical trailer presence at Slot A42 and resolve discrepancy in control tower.',
+      conflictingTrailerIds: [expectedTrailerId, conflictingTrailerId],
+    });
+
+    this.addAuditLog('YARD_SENSOR', slot.id, 'LOCATION_MISMATCH', 'Telemetry Simulation', `MISMATCH DETECTED at Slot ${slot.id}: Expected ${expectedTrailerId}, Mule signal detected ${conflictingTrailerId}`);
+
+    return { slot, status: 'MISMATCH', exception };
+  }
+
+  public resetSensors() {
+    for (const slot of this.yardSlots) {
+      if (slot.status === 'OCCUPIED') {
+        const trailerId = slot.occupiedByTrailerId || 'TR-106';
+        slot.sensorTrailerId = trailerId;
+        slot.rtlsTrailerId = trailerId;
+        slot.yardMuleTrailerId = trailerId;
+        slot.locationValidationStatus = 'VERIFIED';
+      } else {
+        slot.locationValidationStatus = 'UNVALIDATED';
+      }
+    }
+    return { success: true, message: 'All yard sensors reset to verified state' };
   }
 }
 

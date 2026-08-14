@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
-import { Play, AlertOctagon, Clock, AlertTriangle, CheckCircle2, RotateCcw, Loader2 } from 'lucide-react';
+import { Play, AlertOctagon, Clock, AlertTriangle, CheckCircle2, RotateCcw, Loader2, ShieldCheck, ShieldAlert, Cpu } from 'lucide-react';
 
 interface DemoBarProps {
   onSimulationTriggered?: () => void;
@@ -39,6 +39,34 @@ export const DemoBar: React.FC<DemoBarProps> = ({ onSimulationTriggered }) => {
       </div>
 
       <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+        {/* Feature 3: Sensor Match Simulation */}
+        <button
+          disabled={!!loadingAction}
+          onClick={() => handleAction('Simulate Sensor Match', () => api.simulateSensorMatch('A42'))}
+          className="flex items-center space-x-1.5 px-3 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition disabled:opacity-50 font-medium"
+        >
+          {loadingAction === 'Simulate Sensor Match' ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          )}
+          <span>Simulate Sensor Match</span>
+        </button>
+
+        {/* Feature 3: Location Mismatch Simulation */}
+        <button
+          disabled={!!loadingAction}
+          onClick={() => handleAction('Simulate Location Mismatch', () => api.simulateSensorMismatch('A42'))}
+          className="flex items-center space-x-1.5 px-3 py-1 rounded bg-red-500/20 text-red-700 border border-red-400 hover:bg-red-500/30 transition disabled:opacity-50 font-extrabold animate-pulse"
+        >
+          {loadingAction === 'Simulate Location Mismatch' ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
+          )}
+          <span>Simulate Location Mismatch</span>
+        </button>
+
         {/* Fail D04 */}
         <button
           disabled={!!loadingAction}
@@ -79,34 +107,6 @@ export const DemoBar: React.FC<DemoBarProps> = ({ onSimulationTriggered }) => {
             <AlertTriangle className="w-3.5 h-3.5 text-blue-600" />
           )}
           <span>Simulate Congestion (&gt;80%)</span>
-        </button>
-
-        {/* Start Unloading */}
-        <button
-          disabled={!!loadingAction}
-          onClick={() => handleAction('Start Unloading', () => api.simulateStartUnloading('SHP-1005'))}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition disabled:opacity-50 font-medium"
-        >
-          {loadingAction === 'Start Unloading' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Play className="w-3.5 h-3.5 text-blue-600" />
-          )}
-          <span>Start Unloading</span>
-        </button>
-
-        {/* Complete Unloading */}
-        <button
-          disabled={!!loadingAction}
-          onClick={() => handleAction('Complete Unloading', () => api.simulateCompleteUnloading('SHP-1005'))}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded bg-emerald-500/20 text-emerald-700 border border-emerald-300 hover:bg-emerald-500/30 transition disabled:opacity-50 font-medium"
-        >
-          {loadingAction === 'Complete Unloading' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-          )}
-          <span>Complete Unloading</span>
         </button>
 
         {/* Reset Demo State */}

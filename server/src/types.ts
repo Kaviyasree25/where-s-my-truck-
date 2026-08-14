@@ -45,7 +45,17 @@ export interface Shipment {
   activeExceptionId?: string;
 }
 
+export type PriorityLevel = 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW';
+export type DemurrageRisk = 'NORMAL' | 'WARNING' | 'HIGH_RISK' | 'DEMURRAGE_RISK';
+
 export type TrailerStatus = 'EN_ROUTE' | 'IN_YARD' | 'AT_DOCK' | 'DEPARTED';
+
+export interface PriorityBreakdown {
+  inventoryUrgency: number;
+  dwellTimeScore: number;
+  etaVariance: number;
+  demurrageBonus?: number;
+}
 
 export interface Trailer {
   id: string; // e.g. TR-105
@@ -58,6 +68,16 @@ export interface Trailer {
   assignedDockId?: string;
   shipmentId: string;
   arrivedAt?: string;
+
+  // Feature 1 & 2 extensions
+  inventoryUrgency?: number;
+  dwellMinutes?: number;
+  etaVarianceMinutes?: number;
+  priorityScore?: number;
+  priorityLevel?: PriorityLevel;
+  demurrageRisk?: DemurrageRisk;
+  scoreReason?: string;
+  scoreBreakdown?: PriorityBreakdown;
 }
 
 export interface Carrier {
@@ -85,6 +105,7 @@ export interface Appointment {
 
 export type YardZoneId = 'ZONE_A' | 'ZONE_B' | 'ZONE_C';
 export type YardSlotStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
+export type LocationValidationStatus = 'VERIFIED' | 'MISMATCH' | 'UNVALIDATED';
 
 export interface YardSlot {
   id: string; // e.g. A01
@@ -95,6 +116,12 @@ export interface YardSlot {
   occupiedByTrailerId?: string;
   trailerType?: LoadType;
   dwellMinutes?: number;
+
+  // Feature 3 extensions
+  sensorTrailerId?: string;
+  rtlsTrailerId?: string;
+  yardMuleTrailerId?: string;
+  locationValidationStatus?: LocationValidationStatus;
 }
 
 export type DockType = 'STANDARD' | 'REFRIGERATED' | 'HEAVY_DUTY';
@@ -142,7 +169,8 @@ export type ExceptionType =
   | 'YARD_CONGESTION'
   | 'LONG_WAITING'
   | 'MISSED_APPOINTMENT'
-  | 'EXTENDED_PROCESSING';
+  | 'EXTENDED_PROCESSING'
+  | 'YARD_LOCATION_MISMATCH';
 
 export type ExceptionSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type ExceptionStatus = 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
@@ -152,6 +180,7 @@ export interface Exception {
   shipmentId?: string;
   trailerId?: string;
   dockId?: string;
+  yardSlotId?: string;
   type: ExceptionType;
   severity: ExceptionSeverity;
   title: string;
@@ -160,6 +189,25 @@ export interface Exception {
   status: ExceptionStatus;
   recommendedAction?: string;
   resolutionDetails?: string;
+  conflictingTrailerIds?: string[];
+}
+
+export interface SmartQueueItem {
+  trailerId: string;
+  shipmentId: string;
+  carrierName: string;
+  loadType: LoadType;
+  currentSlotId: string;
+  dwellMinutes: number;
+  formattedDwellTime: string;
+  remainingDemurrageMinutes: number;
+  formattedRemainingTime: string;
+  demurrageThresholdMinutes: number;
+  priorityScore: number;
+  priorityLevel: PriorityLevel;
+  demurrageRisk: DemurrageRisk;
+  breakdown: PriorityBreakdown;
+  reason: string;
 }
 
 export interface AuditLog {
@@ -212,4 +260,55 @@ export interface AnalyticsKPIs {
   avgDwellTimeMinutes: number;
   onTimeArrivalRatePercent: number;
   activeExceptionsCount: number;
+}
+
+export interface MLFactor {
+  name: string;
+  weightPct: number;
+  description: string;
+}
+
+export interface MLDockOption {
+  dockId: string;
+  dockName: string;
+  confidencePct: number;
+  expectedWaitMins: number;
+  isFeasible: boolean;
+  infeasibleReason?: string;
+  topFactors: string[];
+}
+
+export interface MLYardOption {
+  slotId: string;
+  confidencePct: number;
+  isFeasible: boolean;
+  topFactors: string[];
+}
+
+export interface MLRecommendationResponse {
+  trailerId: string;
+  shipmentId: string;
+  isMlActive: boolean;
+  source: 'TRAINED_RANDOM_FOREST_ML' | 'RULE_ENGINE_FALLBACK';
+  
+  // Dock Recommendation
+  recommendedDockId: string | null;
+  recommendedDockName: string | null;
+  dockConfidencePct: number;
+  expectedWaitMins: number;
+  dockTopFactors: string[];
+  dockAlternatives: { dockId: string; dockName: string; confidencePct: number }[];
+
+  // Yard Recommendation
+  recommendedYardSlotId: string | null;
+  yardConfidencePct: number;
+  yardTopFactors: string[];
+  yardAlternatives: { slotId: string; confidencePct: number }[];
+
+  // Priority & Demurrage
+  priorityScore: number;
+  priorityLevel: PriorityLevel;
+  demurrageRisk: DemurrageRisk;
+  
+  generatedAt: string;
 }
