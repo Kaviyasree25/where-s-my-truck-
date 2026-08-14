@@ -12,6 +12,8 @@ import {
   TrackingEvent,
   AnalyticsKPIs,
   SmartQueueItem,
+  LoadType,
+  ShipmentPriority,
 } from '../types.js';
 import { priorityEngine } from '../services/priorityEngine.js';
 
@@ -448,6 +450,196 @@ class DataStore {
 
   // Appointments
   public getAppointments(): Appointment[] { return this.appointments; }
+
+  // CRUD: Create New Inbound Shipment
+  public createShipment(data: {
+    carrierName: string;
+    supplier: string;
+    origin?: string;
+    destination?: string;
+    loadType: LoadType;
+    priority: ShipmentPriority;
+    scheduledAppointment?: string;
+    itemsSummary: string;
+    totalWeightKg: number;
+    trailerId?: string;
+    operatorName?: string;
+  }): Shipment {
+    const nextNum = 1011 + this.shipments.length;
+    const shipmentId = `SHP-${nextNum}`;
+    const trackingNumber = `TRK-${Math.floor(100000 + Math.random() * 900000)}`;
+    const trailerId = data.trailerId || `TR-${300 + this.shipments.length}`;
+
+    const newShipment: Shipment = {
+      id: shipmentId,
+      trackingNumber,
+      carrierId: `car-${100 + (this.shipments.length % 5) + 1}`,
+      carrierName: data.carrierName,
+      supplier: data.supplier,
+      origin: data.origin || 'Regional Distribution Depot',
+      destination: data.destination || 'Main Facility - Bay A',
+      priority: data.priority || 'STANDARD',
+      loadType: data.loadType || 'DRY_VAN',
+      status: 'IN_TRANSIT',
+      risk: 'NORMAL',
+      eta: data.scheduledAppointment || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      scheduledAppointment: data.scheduledAppointment || new Date(Date.now() + 90 * 60 * 1000).toISOString(),
+      trailerId,
+      itemsSummary: data.itemsSummary,
+      totalWeightKg: Number(data.totalWeightKg) || 12000,
+    };
+
+    this.shipments.unshift(newShipment);
+
+    let trailer = this.getTrailerById(trailerId);
+    if (!trailer) {
+      trailer = {
+        id: trailerId,
+        licensePlate: `US-${Math.floor(1000 + Math.random() * 9000)}-TR`,
+        carrierId: newShipment.carrierId,
+        carrierName: newShipment.carrierName,
+        trailerType: newShipment.loadType,
+        status: 'EN_ROUTE',
+        shipmentId: newShipment.id,
+        currentLat: 42.1500,
+        currentLng: -88.0000,
+        destinationLat: 41.7508,
+        destinationLng: -88.1535,
+        headingDeg: 180,
+      };
+      this.trailers.push(trailer);
+    }
+
+    this.addTrackingEvent(newShipment.id, 'IN_TRANSIT', newShipment.origin, 'Shipment dispatched into inbound delivery network', data.operatorName || 'System / Operator');
+    this.addAuditLog('SHIPMENT', newShipment.id, 'SHIPMENT_CREATED', data.operatorName || 'System / Operator', `Created inbound shipment ${newShipment.id} (${newShipment.trackingNumber}) via ${newShipment.carrierName}`);
+
+    return newShipment;
+  }
+
+  // CRUD: Gate Check-In Arriving Trailer
+  public checkInTrailer(data: {
+    trailerId: string;
+    carrierName: string;
+    trailerType: LoadType;
+    licensePlate?: string;
+    targetSlotId?: string;
+    operatorName?: string;
+  }): { trailer: Trailer; slot: YardSlot } {
+    let slot: YardSlot | undefined;
+    if (data.targetSlotId) {
+      slot = this.yardSlots.find(s => s.id === data.targetSlotId);
+    }
+    if (!slot) {
+      slot = this.yardSlots.find(s => s.status === 'AVAILABLE');
+    }
+    if (!slot) {
+      throw new Error('No available yard slot found for trailer staging');
+    }
+
+    slot.status = 'OCCUPIED';
+    slot.occupiedByTrailerId = data.trailerId;
+    slot.trailerType = data.trailerType;
+    slot.sensorTrailerId = data.trailerId;
+    slot.rtlsTrailerId = data.trailerId;
+    slot.yardMuleTrailerId = data.trailerId;
+    slot.locationValidationStatus = 'VERIFIED';
+
+    let trailer = this.getTrailerById(data.trailerId);
+    if (!trailer) {
+      trailer = {
+        id: data.trailerId,
+        licensePlate: data.licensePlate || `US-${Math.floor(1000 + Math.random() * 9000)}-TR`,
+        carrierId: 'car-101',
+        carrierName: data.carrierName,
+        trailerType: data.trailerType,
+        status: 'IN_YARD',
+        currentSlotId: slot.id,
+        shipmentId: `SHP-${1010 + this.trailers.length}`,
+        arrivedAt: new Date().toISOString(),
+        dwellMinutes: 0,
+      };
+      this.trailers.push(trailer);
+    } else {
+      trailer.status = 'IN_YARD';
+      trailer.currentSlotId = slot.id;
+      trailer.arrivedAt = new Date().toISOString();
+      trailer.dwellMinutes = 0;
+    }
+
+    this.addAuditLog('TRAILER', trailer.id, 'GATE_CHECKIN', data.operatorName || 'Gate Operator', `Trailer ${trailer.id} checked in at security gate and staged in Yard Slot ${slot.id}`);
+
+    return { trailer, slot };
+  }
+
+  // CRUD: Move Trailer Yard Slot (Yard Mule Re-slotting)
+  public moveTrailerYardSlot(trailerId: string, toSlotId: string, operatorName: string = 'Yard Mule Operator'): { trailer: Trailer; oldSlot?: YardSlot; newSlot: YardSlot } {
+    const trailer = this.getTrailerById(trailerId);
+    if (!trailer) throw new Error(`Trailer ${trailerId} not found`);
+
+    const newSlot = this.yardSlots.find(s => s.id === toSlotId);
+    if (!newSlot) throw new Error(`Destination yard slot ${toSlotId} not found`);
+    if (newSlot.status === 'OCCUPIED' && newSlot.occupiedByTrailerId !== trailerId) {
+      throw new Error(`Destination yard slot ${toSlotId} is already occupied by ${newSlot.occupiedByTrailerId}`);
+    }
+
+    let oldSlot: YardSlot | undefined;
+    if (trailer.currentSlotId) {
+      oldSlot = this.yardSlots.find(s => s.id === trailer.currentSlotId);
+      if (oldSlot && oldSlot.id !== toSlotId) {
+        oldSlot.status = 'AVAILABLE';
+        oldSlot.occupiedByTrailerId = undefined;
+        oldSlot.sensorTrailerId = undefined;
+        oldSlot.rtlsTrailerId = undefined;
+        oldSlot.yardMuleTrailerId = undefined;
+        oldSlot.locationValidationStatus = 'UNVALIDATED';
+      }
+    }
+
+    newSlot.status = 'OCCUPIED';
+    newSlot.occupiedByTrailerId = trailer.id;
+    newSlot.trailerType = trailer.trailerType;
+    newSlot.sensorTrailerId = trailer.id;
+    newSlot.rtlsTrailerId = trailer.id;
+    newSlot.yardMuleTrailerId = trailer.id;
+    newSlot.locationValidationStatus = 'VERIFIED';
+
+    trailer.currentSlotId = newSlot.id;
+
+    const shipment = this.shipments.find(s => s.trailerId === trailer.id || s.id === trailer.shipmentId);
+    if (shipment) {
+      shipment.currentYardSlotId = newSlot.id;
+      this.addTrackingEvent(shipment.id, 'IN_YARD', `Yard Slot ${newSlot.id}`, `Trailer relocated to Yard Slot ${newSlot.id}`, operatorName);
+    }
+
+    this.addAuditLog('YARD_MULE', newSlot.id, 'TRAILER_RELOCATED', operatorName, `Yard Mule relocated Trailer ${trailer.id} from ${oldSlot ? oldSlot.id : 'Gate'} to Slot ${newSlot.id}`);
+
+    return { trailer, oldSlot, newSlot };
+  }
+
+  // CRUD: Create or Update Dock Door
+  public createOrUpdateDock(data: Partial<Dock> & { id: string; name?: string }): Dock {
+    let dock = this.getDockById(data.id);
+    if (!dock) {
+      dock = {
+        id: data.id,
+        name: data.name || `Dock Door ${data.id}`,
+        dockType: data.dockType || 'STANDARD',
+        status: data.status || 'AVAILABLE',
+        capabilities: data.capabilities || ['DRY_VAN'],
+        maintenanceNotes: data.maintenanceNotes,
+      };
+      this.docks.push(dock);
+      this.addAuditLog('DOCK', dock.id, 'DOCK_CREATED', 'Admin', `Created new dock door ${dock.id} (${dock.name})`);
+    } else {
+      if (data.name) dock.name = data.name;
+      if (data.dockType) dock.dockType = data.dockType;
+      if (data.status) dock.status = data.status;
+      if (data.capabilities) dock.capabilities = data.capabilities;
+      if (data.maintenanceNotes !== undefined) dock.maintenanceNotes = data.maintenanceNotes;
+      this.addAuditLog('DOCK', dock.id, 'DOCK_UPDATED', 'Admin', `Updated dock door ${dock.id} configuration`);
+    }
+    return dock;
+  }
 
   // Exceptions
   public getExceptions(): Exception[] { return this.exceptions; }

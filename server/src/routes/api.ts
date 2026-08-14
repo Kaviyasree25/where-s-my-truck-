@@ -42,6 +42,15 @@ router.get('/shipments/:id', (req, res) => {
   });
 });
 
+router.post('/shipments', (req, res) => {
+  try {
+    const shipment = store.createShipment(req.body);
+    res.status(201).json(shipment);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 3. Customer Tracking (External Customer Safe View)
 router.get('/tracking/:query', (req, res) => {
   const query = req.params.query;
@@ -98,9 +107,27 @@ router.get('/trailers/:id/route', (req, res) => {
   res.json(getTrailerRouteDetails(req.params.id));
 });
 
+router.post('/trailers/check-in', (req, res) => {
+  try {
+    const result = store.checkInTrailer(req.body);
+    res.status(201).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 5. Docks
 router.get('/docks', (req, res) => {
   res.json(store.getDocks());
+});
+
+router.post('/docks', (req, res) => {
+  try {
+    const dock = store.createOrUpdateDock(req.body);
+    res.json(dock);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.put('/docks/:id/status', (req, res) => {
@@ -132,6 +159,16 @@ router.get('/yard', (req, res) => {
     occupancyPercent,
     isCongested: occupancyPercent >= 80,
   });
+});
+
+router.post('/yard/move', (req, res) => {
+  try {
+    const { trailerId, toSlotId, operatorName } = req.body;
+    const result = store.moveTrailerYardSlot(trailerId, toSlotId, operatorName);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 7. Appointments
