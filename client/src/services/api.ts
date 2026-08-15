@@ -131,9 +131,24 @@ export const api = {
     return res.data;
   },
 
-  // Docks
+  // Docks & Live Unloading Schedule
   getDocks: async (): Promise<Dock[]> => {
     const res = await apiClient.get('/docks');
+    return res.data;
+  },
+
+  getDockSchedule: async (horizon?: string): Promise<any[]> => {
+    const res = await apiClient.get('/docks/schedule', { params: { horizon } });
+    return res.data;
+  },
+
+  getHorizonSchedule: async (horizon: string = '1H'): Promise<any> => {
+    const res = await apiClient.get(`/schedule/horizon/${horizon}`);
+    return res.data;
+  },
+
+  autoScheduleTrailer: async (trailerId?: string): Promise<any> => {
+    const res = await apiClient.post('/trailers/auto-schedule', { trailerId });
     return res.data;
   },
 
@@ -153,8 +168,8 @@ export const api = {
   },
 
   // Yard
-  getYardState: async (): Promise<YardState> => {
-    const res = await apiClient.get('/yard');
+  getYardState: async (horizon?: string): Promise<YardState> => {
+    const res = await apiClient.get('/yard', { params: { horizon } });
     return res.data;
   },
 
@@ -291,12 +306,22 @@ export const api = {
   },
 
   resetTrailerRoutes: async () => {
-    const res = await apiClient.post('/trailers/routes/reset');
+    const res = await apiClient.post('/simulation/reset-routes');
     return res.data;
   },
 
   resetRoutes: async () => {
-    const res = await apiClient.post('/trailers/routes/reset');
+    const res = await apiClient.post('/simulation/reset-routes');
+    return res.data;
+  },
+
+  simulatePreemption: async () => {
+    const res = await apiClient.post('/schedule/simulate-preemption');
+    return res.data;
+  },
+
+  clearPreemption: async () => {
+    const res = await apiClient.post('/schedule/clear-preemption');
     return res.data;
   },
 };

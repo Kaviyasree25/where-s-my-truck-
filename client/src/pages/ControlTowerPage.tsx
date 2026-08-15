@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../services/api';
 import { getSocket } from '../services/socket';
-import { Shipment, AnalyticsKPIs, SmartQueueItem, MLRecommendationResponse } from '../types';
+import { Shipment, Dock, AnalyticsKPIs, SmartQueueItem, MLRecommendationResponse, TimeHorizon } from '../types';
 import { KPICard } from '../components/common/KPICard';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { AllocationModal } from '../components/allocation/AllocationModal';
@@ -13,6 +13,7 @@ import { ReassignmentModal } from '../components/common/ReassignmentModal';
 import { SmartQueueCard } from '../components/common/SmartQueueCard';
 import { MLRecommendationBadge } from '../components/common/MLRecommendationBadge';
 import { MLModelModal } from '../components/common/MLModelModal';
+import { TimeHorizonFilter } from '../components/common/TimeHorizonFilter';
 import {
   Truck, Building2, AlertTriangle, Grid, Search,
   SlidersHorizontal, Sparkles, ArrowRight, RefreshCw, Cpu, Navigation,
@@ -682,6 +683,7 @@ function FullWidthControlTowerMap({
 // ─── Main Control Tower Page ───────────────────────────────────────────────────
 export const ControlTowerPage: React.FC = () => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [docks, setDocks] = useState<Dock[]>([]);
   const [smartQueue, setSmartQueue] = useState<SmartQueueItem[]>([]);
   const [mlRec, setMlRec] = useState<MLRecommendationResponse | null>(null);
   const [kpis, setKpis] = useState<AnalyticsKPIs | null>(null);
@@ -724,6 +726,10 @@ export const ControlTowerPage: React.FC = () => {
     socket.on('DEMO_RESET_EVENT', onOpsChange);
     socket.on('SENSOR_MATCH_EVENT', onOpsChange);
     socket.on('SENSOR_MISMATCH_EVENT', onOpsChange);
+    socket.on('DOCK_ROTATION_EVENT', onOpsChange);
+    socket.on('DOCK_ROTATION_TICK', onOpsChange);
+    socket.on('SCHEDULE_PREEMPTION_EVENT', onOpsChange);
+    socket.on('CLEAR_PREEMPTION_EVENT', onOpsChange);
     socket.on('RECOMMENDATIONS_UPDATED', onRecsUpdated);
     socket.on('TRAILER_POSITION_EVENT', onPositions);
 
@@ -733,6 +739,10 @@ export const ControlTowerPage: React.FC = () => {
       socket.off('DEMO_RESET_EVENT', onOpsChange);
       socket.off('SENSOR_MATCH_EVENT', onOpsChange);
       socket.off('SENSOR_MISMATCH_EVENT', onOpsChange);
+      socket.off('DOCK_ROTATION_EVENT', onOpsChange);
+      socket.off('DOCK_ROTATION_TICK', onOpsChange);
+      socket.off('SCHEDULE_PREEMPTION_EVENT', onOpsChange);
+      socket.off('CLEAR_PREEMPTION_EVENT', onOpsChange);
       socket.off('RECOMMENDATIONS_UPDATED', onRecsUpdated);
       socket.off('TRAILER_POSITION_EVENT', onPositions);
     };
@@ -741,16 +751,18 @@ export const ControlTowerPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [shipmentList, kpiData, queueData, mlData] = await Promise.all([
-        api.getShipments(),
-        api.getAnalyticsKPIs(),
-        api.getSmartQueue(),
-        api.getMLRecommendation('TR-106'),
+      const [shipmentList, dockList, kpiData, queueData, mlData] = await Promise.all([
+        api.getShipments().catch(() => []),
+        api.getDocks().catch(() => []),
+        api.getAnalyticsKPIs().catch(() => null),
+        api.getSmartQueue().catch(() => []),
+        api.getMLRecommendation('TR-106').catch(() => null),
       ]);
-      setShipments(shipmentList);
-      setKpis(kpiData);
-      setSmartQueue(queueData);
-      setMlRec(mlData);
+      if (shipmentList && shipmentList.length > 0) setShipments(shipmentList);
+      if (dockList && dockList.length > 0) setDocks(dockList);
+      if (kpiData) setKpis(kpiData);
+      if (queueData && queueData.length > 0) setSmartQueue(queueData);
+      if (mlData) setMlRec(mlData);
     } catch (err) {
       console.error('Error fetching control tower data:', err);
     } finally {
@@ -796,7 +808,11 @@ export const ControlTowerPage: React.FC = () => {
       s.trackingNumber.toLowerCase().includes(q) ||
       s.trailerId.toLowerCase().includes(q) ||
       s.carrierName.toLowerCase().includes(q);
-    return matchesSearch && (riskFilter === 'ALL' || s.risk === riskFilter);
+
+    if (!matchesSearch) return false;
+    if (riskFilter !== 'ALL' && s.risk !== riskFilter) return false;
+
+    return true;
   });
 
   return (
@@ -918,22 +934,28 @@ export const ControlTowerPage: React.FC = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {['D01', 'D02', 'D03', 'D04', 'D05', 'D06'].map(dockId => {
-            const activeShipment = shipments.find(s => s.currentDockId === dockId);
-            const isAssigned = !!activeShipment;
+            const dock = docks.find(d => d.id === dockId);
+            const isOccupied = dock?.status === 'OCCUPIED';
+            const isMaint = dock?.status === 'MAINTENANCE';
+            const activeShipment = shipments.find(s => s.id === dock?.currentShipmentId || s.trailerId === dock?.currentTrailerId || s.currentDockId === dockId);
+            const trailerId = dock?.currentTrailerId || activeShipment?.trailerId;
+            const carrierName = activeShipment?.carrierName || (trailerId ? 'Line-Haul Freight' : '');
 
             return (
               <div
                 key={dockId}
                 onClick={() => {
-                  if (activeShipment) {
-                    setSelectedTrailerId(activeShipment.trailerId);
+                  if (trailerId) {
+                    setSelectedTrailerId(trailerId);
                   } else {
                     navigate('/docks');
                   }
                 }}
                 className={`p-3 rounded-xl border transition cursor-pointer font-mono ${
-                  isAssigned
-                    ? 'border-blue-200 bg-blue-50/50 hover:bg-blue-100/50'
+                  isOccupied
+                    ? 'border-blue-200 bg-blue-50/70 hover:bg-blue-100/70'
+                    : isMaint
+                    ? 'border-amber-200 bg-amber-50/70 hover:bg-amber-100/70'
                     : 'border-dashed border-slate-200 bg-slate-50/40 hover:bg-slate-100/60'
                 }`}
               >
@@ -941,22 +963,26 @@ export const ControlTowerPage: React.FC = () => {
                   <span className="font-black text-sm text-slate-900">{dockId}</span>
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                      isAssigned
+                      isOccupied
                         ? 'bg-blue-100 text-blue-700'
+                        : isMaint
+                        ? 'bg-amber-100 text-amber-700'
                         : 'bg-emerald-100 text-emerald-700'
                     }`}
                   >
-                    {isAssigned ? 'PROCESSING' : 'READY'}
+                    {isOccupied ? 'OCCUPIED' : isMaint ? 'MAINT.' : 'AVAILABLE'}
                   </span>
                 </div>
 
-                {isAssigned ? (
+                {isOccupied && trailerId ? (
                   <div className="space-y-0.5">
-                    <div className="font-bold text-xs text-blue-900 truncate">{activeShipment.trailerId}</div>
-                    <div className="text-[10px] text-slate-500 truncate">{activeShipment.carrierName}</div>
+                    <div className="font-bold text-xs text-blue-900 truncate">{trailerId}</div>
+                    <div className="text-[10px] text-slate-500 truncate">{carrierName}</div>
                   </div>
+                ) : isMaint ? (
+                  <div className="text-[10px] text-amber-700 italic">Sanitization / Maint</div>
                 ) : (
-                  <div className="text-[10px] text-slate-400 italic">Available for allocation</div>
+                  <div className="text-[10px] text-slate-400 italic">Available buffer</div>
                 )}
               </div>
             );
