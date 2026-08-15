@@ -15,7 +15,9 @@ import {
   MLRecommendationResponse,
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api` 
+  : '/api';
 
 // Create dedicated axios instance with JWT header interceptor
 export const apiClient = axios.create({
