@@ -62,12 +62,12 @@ router.get('/shipments/:id', (req, res) => {
     );
   }
 
-  // Fallback: If it's a Trailer ID in our 50-trailer fleet
+  // Fallback: If it's a Trailer ID or Shipment ID in our 50-trailer fleet
   if (!shipment) {
-    const trailer = store.getTrailerById(query);
+    const trailer = store.getTrailerById(query) || store.getTrailers().find(t => t.shipmentId?.toLowerCase() === query.toLowerCase() || t.id.toLowerCase() === query.toLowerCase());
     if (trailer) {
       shipment = {
-        id: trailer.shipmentId || `SHP-${trailer.id.replace('TR-', '10')}`,
+        id: trailer.shipmentId || (query.startsWith('SHP-') ? query : `SHP-${trailer.id.replace('TR-', '10')}`),
         trackingNumber: `TRK-${trailer.id.replace('TR-', '99')}`,
         carrierId: trailer.carrierId,
         carrierName: trailer.carrierName,
@@ -130,10 +130,10 @@ router.get('/tracking/:query', (req, res) => {
   }
 
   if (!shipment) {
-    const trailer = store.getTrailerById(query);
+    const trailer = store.getTrailerById(query) || store.getTrailers().find(t => t.shipmentId?.toLowerCase() === query.toLowerCase() || t.id.toLowerCase() === query.toLowerCase());
     if (trailer) {
       shipment = {
-        id: trailer.shipmentId || `SHP-${trailer.id.replace('TR-', '10')}`,
+        id: trailer.shipmentId || (query.startsWith('SHP-') ? query : `SHP-${trailer.id.replace('TR-', '10')}`),
         trackingNumber: `TRK-${trailer.id.replace('TR-', '99')}`,
         carrierId: trailer.carrierId,
         carrierName: trailer.carrierName,
