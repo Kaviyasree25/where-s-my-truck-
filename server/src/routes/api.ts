@@ -3,8 +3,33 @@ import { store } from '../db/store.js';
 import { allocationEngine } from '../services/allocationEngine.js';
 import { simulationService } from '../services/simulationService.js';
 import { getAllTrailerRoutes, getTrailerRouteDetails, resetTrailerPositions } from '../services/positionSimulator.js';
+import { mlRecommendationService } from '../services/mlRecommendationService.js';
+import { authenticateUser, requireAuth, requireRole } from '../services/authService.js';
 
 const router = Router();
+
+// 0. Authentication Endpoints (JWT HMAC-SHA256)
+router.post('/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  const result = authenticateUser(email, password);
+  if (!result) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+
+  res.json({
+    success: true,
+    token: result.token,
+    user: result.user,
+  });
+});
+
+router.get('/auth/me', requireAuth, (req, res) => {
+  res.json({ user: req.user });
+});
 
 // 1. Users
 router.get('/users', (req, res) => {
@@ -346,8 +371,6 @@ router.post('/simulation/reset', (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-import { mlRecommendationService } from '../services/mlRecommendationService.js';
 
 // ML Recommendation APIs
 router.get('/recommendations/:trailerId', (req, res) => {
