@@ -45,7 +45,7 @@ const INITIAL_USERS: User[] = [
     name: 'Abi',
     email: 'abi@apexretail.com',
     role: 'CUSTOMER',
-    title: 'Customer Logistics Lead',
+    title: 'Distribution Center (DC) Logistics Lead',
     avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
   },
   {
