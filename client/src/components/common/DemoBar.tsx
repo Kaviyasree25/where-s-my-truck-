@@ -33,7 +33,7 @@ export const DemoBar: React.FC<DemoBarProps> = ({ onSimulationTriggered }) => {
   };
 
   return (
-    <div className="bg-white border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+    <div className="mx-3 mt-2 rounded-2xl bg-white border border-slate-200/90 px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs shrink-0">
       <div className="flex items-center space-x-2">
         <span className="font-mono text-[10px] font-bold tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
           DEMO SIMULATION TOOLBAR

@@ -69,15 +69,14 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-slate-50 text-slate-900 flex flex-col overflow-hidden">
-      <Header />
-      {/* Simulation toolbar only visible to internal warehouse operations roles */}
-      {currentRole !== 'CUSTOMER' && (
-        <DemoBar onSimulationTriggered={fetchExceptionsCount} />
-      )}
-
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        <Sidebar activeExceptionsCount={activeExceptionsCount} />
+    <div className="h-screen bg-slate-50 text-slate-900 flex overflow-hidden">
+      <Sidebar activeExceptionsCount={activeExceptionsCount} />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Header />
+        {/* Simulation toolbar only visible to internal warehouse operations roles */}
+        {currentRole !== 'CUSTOMER' && (
+          <DemoBar onSimulationTriggered={fetchExceptionsCount} />
+        )}
         <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
           <Breadcrumbs />
           <Routes>

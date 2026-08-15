@@ -105,24 +105,16 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-[2000] font-sans select-none">
-      {/* Title & Warehouse context */}
-      <div className="flex items-center space-x-4">
-        <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shadow-2xs">
-          <Building2 className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-sm font-black text-slate-900 tracking-tight uppercase">
-              Inbound &amp; Outbound Operations Control Tower
-            </h1>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-              FACILITY BAY-A
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 font-mono">
-            Supply Chain Inbound &amp; Outbound Logistics • Smart Facility Allocation System
-          </p>
+    <header className="m-3 mb-0 rounded-2xl border border-slate-200/90 bg-white shadow-2xs px-6 py-2.5 flex items-center justify-between font-sans select-none shrink-0">
+      {/* Facility Hub Context */}
+      <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 shadow-2xs">
+          <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
+          <span className="font-bold text-slate-900">Naperville DC-1 Logistics Hub</span>
+          <span className="text-slate-300">|</span>
+          <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+            Facility Bay-A Active
+          </span>
         </div>
       </div>
 
