@@ -1,120 +1,162 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, MOCK_USERS_CREDENTIALS } from '../context/AuthContext';
 import { UserRole } from '../types';
 import {
   Building2,
-  UserCheck,
-  ShieldCheck,
-  PackageSearch,
-  LayoutDashboard,
+  Lock,
+  Mail,
   ArrowRight,
+  AlertCircle,
+  KeyRound,
+  Shield,
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { switchRole } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleRoleLogin = (role: UserRole) => {
-    switchRole(role);
-    if (role === 'CUSTOMER') {
-      navigate('/customer-tracking');
-    } else {
-      navigate('/control-tower');
+  const [email, setEmail] = useState<string>(MOCK_USERS_CREDENTIALS['ADMIN'].email);
+  const [password, setPassword] = useState<string>(MOCK_USERS_CREDENTIALS['ADMIN'].plainPassword);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('ADMIN');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const rolePills: { role: UserRole; label: string }[] = [
+    { role: 'ADMIN', label: 'Admin' },
+    { role: 'OPERATOR', label: 'Operator' },
+    { role: 'MANAGER', label: 'Manager' },
+    { role: 'CUSTOMER', label: 'Customer' },
+  ];
+
+  const handleQuickFill = (role: UserRole) => {
+    setSelectedRole(role);
+    const cred = MOCK_USERS_CREDENTIALS[role];
+    setEmail(cred.email);
+    setPassword(cred.plainPassword);
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const res = await login(email, password);
+      if (res.success && res.role) {
+        if (res.role === 'CUSTOMER') {
+          navigate('/customer-tracking');
+        } else {
+          navigate('/control-tower');
+        }
+      } else {
+        setError(res.error || 'Invalid credentials');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const roles = [
-    {
-      role: 'OPERATOR' as UserRole,
-      title: 'Warehouse Operator',
-      subtitle: 'Manage arrivals, yard slots, dock doors, approve smart allocation & dynamic reassignment',
-      icon: Building2,
-      badgeColor: 'border-blue-200 text-blue-600 bg-blue-50',
-    },
-    {
-      role: 'MANAGER' as UserRole,
-      title: 'Control Tower Manager',
-      subtitle: 'Monitor operational KPIs, warehouse risks, exceptions, dwell times, and throughput analytics',
-      icon: LayoutDashboard,
-      badgeColor: 'border-emerald-200 text-emerald-700 bg-emerald-50',
-    },
-    {
-      role: 'CUSTOMER' as UserRole,
-      title: 'Customer Logistics Portal',
-      subtitle: 'Track shipments, view ETAs, delivery progress milestones, and delay notifications',
-      icon: PackageSearch,
-      badgeColor: 'border-amber-200 text-amber-700 bg-amber-50',
-    },
-    {
-      role: 'ADMIN' as UserRole,
-      title: 'Master Data Administrator',
-      subtitle: 'Maintain facility master data, docks, yard zones, carriers, trailer types, and user access',
-      icon: ShieldCheck,
-      badgeColor: 'border-blue-200 text-blue-600 bg-blue-50',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="max-w-4xl w-full space-y-8 relative z-10">
-        {/* Header Branding */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-mono text-blue-600">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 font-sans select-none">
+      <div className="max-w-md w-full space-y-6">
+        {/* Branding */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-mono text-blue-600 shadow-2xs">
             <Building2 className="w-4 h-4 text-blue-600" />
-            <span>ENTERPRISE INBOUND CONTROL TOWER MVP</span>
+            <span className="font-bold">INBOUND CONTROL TOWER</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            Inbound Warehouse Operations & Visibility Platform
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Sign In to Platform
           </h1>
-          <p className="text-slate-400 text-sm max-w-xl mx-auto">
-            Select an operational role below to enter the live warehouse environment for hackathon evaluation.
+          <p className="text-xs text-slate-500 font-mono">
+            Enter your credentials or select a quick-fill role below.
           </p>
         </div>
 
-        {/* Role Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {roles.map(r => {
-            const Icon = r.icon;
-            return (
-              <div
-                key={r.role}
-                onClick={() => handleRoleLogin(r.role)}
-                className="group relative bg-white border border-slate-200 rounded-2xl p-6 hover:border-slate-300 transition-all duration-200 cursor-pointer shadow-xl hover:shadow-2xl flex flex-col justify-between"
+        {/* Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+          {/* Quick-Fill Role Selector */}
+          <div className="space-y-2">
+            <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+              Quick Fill Demo Credentials
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {rolePills.map(item => (
+                <button
+                  key={item.role}
+                  type="button"
+                  onClick={() => handleQuickFill(item.role)}
+                  className={`py-2 px-2 rounded-xl text-xs font-mono font-bold transition border text-center cursor-pointer ${
+                    selectedRole === item.role
+                      ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-500/10'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-mono flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-1">
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>Email Address</span>
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="user@warehouse.logistics"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center space-x-1">
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <span>Password</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition"
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-mono text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2 cursor-pointer"
               >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className={`p-3 rounded-xl border ${r.badgeColor}`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                      {r.role}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">
-                      {r.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                      {r.subtitle}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between text-xs font-semibold text-blue-600 group-hover:translate-x-1 transition-transform">
-                  <span>Enter Platform as {r.title}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="text-center text-xs text-slate-500 font-mono">
-          CTS NPN Hackathon Prototype • Real-time Socket Synchronization Enabled
+                <KeyRound className="w-4 h-4" />
+                <span>{isLoading ? 'Signing In...' : 'Sign In'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 };
+
+export default LoginPage;

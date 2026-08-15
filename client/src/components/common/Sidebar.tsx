@@ -12,8 +12,8 @@ import {
   UserCheck,
   Settings,
   LogOut,
-  Sliders,
-  ShieldAlert
+  ShieldCheck,
+  User
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,7 +21,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) => {
-  const { currentRole, logout } = useAuth();
+  const { currentRole, currentUser, logout } = useAuth();
 
   const navigationItems = [
     {
@@ -65,13 +65,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
       name: 'Live Analytics',
       path: '/analytics',
       icon: BarChart3,
-      roles: ['OPERATOR', 'MANAGER', 'ADMIN'],
+      roles: ['MANAGER', 'ADMIN'], // Restricted from OPERATOR & CUSTOMER
     },
     {
       name: 'Master Data & Admin',
       path: '/admin',
       icon: Settings,
-      roles: ['OPERATOR', 'MANAGER', 'ADMIN'],
+      roles: ['ADMIN'], // Restricted to ADMIN only
     },
     {
       name: 'Customer Portal',
@@ -83,14 +83,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
 
   const visibleItems = navigationItems.filter(item => item.roles.includes(currentRole));
 
+  const roleColorMap: Record<string, string> = {
+    ADMIN: 'bg-purple-50 text-purple-700 border-purple-200',
+    OPERATOR: 'bg-blue-50 text-blue-700 border-blue-200',
+    MANAGER: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    CUSTOMER: 'bg-amber-50 text-amber-700 border-amber-200',
+  };
+
   return (
     <aside className="w-64 shrink-0 border-r border-slate-200 bg-white flex flex-col justify-between p-4 h-full overflow-y-auto font-sans select-none">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <span className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-            Operations Menu
+            {currentRole === 'CUSTOMER' ? 'Customer Portal' : 'Operations Menu'}
           </span>
-          <nav className="mt-2.5 space-y-1">
+          <nav className="mt-2 space-y-1">
             {visibleItems.map(item => {
               const Icon = item.icon;
               return (
@@ -98,10 +105,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/80 shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${isActive
+                      ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/80 shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
@@ -121,13 +127,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
         </div>
       </div>
 
-      <div className="border-t border-slate-200 pt-4 mt-auto shrink-0">
+      <div className="border-t border-slate-200 pt-4 mt-auto shrink-0 space-y-2">
         <button
           onClick={logout}
-          className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer border border-transparent hover:border-rose-200"
+          title="Sign out to Login Page"
         >
-          <LogOut className="w-4 h-4" />
-          <span>Exit Session</span>
+          <div className="flex items-center space-x-2.5">
+            <LogOut className="w-4 h-4" />
+            <span>Exit Session</span>
+          </div>
+          <span className="text-[10px] font-mono text-slate-400">Logout</span>
         </button>
       </div>
     </aside>
