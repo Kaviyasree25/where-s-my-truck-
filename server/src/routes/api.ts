@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { store } from '../db/store.js';
 import { allocationEngine } from '../services/allocationEngine.js';
 import { simulationService } from '../services/simulationService.js';
@@ -232,26 +232,6 @@ router.get('/docks/schedule', (req, res) => {
   const horizon = (req.query.horizon as string) || 'NOW';
   const snapshot = schedulePredictionEngine.getSnapshotForHorizon(horizon as any);
   res.json(snapshot.docks);
-});
-
-router.get('/schedule/horizon/:horizon', (req, res) => {
-  try {
-    const horizon = (req.params.horizon as string) || '1H';
-    const snapshot = schedulePredictionEngine.getSnapshotForHorizon(horizon as any);
-    res.json(snapshot);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.post('/trailers/auto-schedule', (req, res) => {
-  try {
-    const { trailerId } = req.body;
-    const rec = mlRecommendationService.getRecommendationForTrailer(trailerId || 'TR-106');
-    res.json({ success: true, recommendation: rec });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 router.post('/docks', (req, res) => {
