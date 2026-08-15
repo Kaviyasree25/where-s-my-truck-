@@ -282,43 +282,39 @@ function FullWidthControlTowerMap({
           <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs font-mono text-xs">
             <button
               onClick={() => setMapFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition ${
-                mapFilter === 'ALL'
+              className={`px-2.5 py-1 rounded-lg font-bold transition ${mapFilter === 'ALL'
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               All ({positions.length})
             </button>
             <button
               onClick={() => setMapFilter('EN_ROUTE')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${
-                mapFilter === 'EN_ROUTE'
+              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${mapFilter === 'EN_ROUTE'
                   ? 'bg-emerald-600 text-white'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
               <span>En Route ({enRouteCount})</span>
             </button>
             <button
               onClick={() => setMapFilter('IN_YARD')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${
-                mapFilter === 'IN_YARD'
+              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${mapFilter === 'IN_YARD'
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
               <span>Yard ({inYardCount})</span>
             </button>
             <button
               onClick={() => setMapFilter('AT_DOCK')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${
-                mapFilter === 'AT_DOCK'
+              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${mapFilter === 'AT_DOCK'
                   ? 'bg-purple-600 text-white'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
               <span>Docks ({atDockCount})</span>
@@ -827,29 +823,6 @@ export const ControlTowerPage: React.FC = () => {
             Live Highway Corridors, Machine Learning Allocations &amp; Real-Time Yard Telemetry
           </p>
         </div>
-
-        {/* Top Action Toolbar */}
-        <div className="flex items-center space-x-2.5">
-          <button
-            onClick={() => setShowMLModal(true)}
-            className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-mono font-bold text-xs border border-blue-200 flex items-center space-x-2 transition shadow-xs cursor-pointer group"
-            title="Inspect RandomForest model architecture, feature weights, and safety rules"
-          >
-            <Cpu className="w-4 h-4 text-blue-600 animate-pulse group-hover:scale-110 transition-transform" />
-            <span>ML Model Inspector</span>
-            <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-mono font-extrabold shadow-2xs">
-              96.5% FIT
-            </span>
-          </button>
-
-          <button
-            onClick={fetchData}
-            className="p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 transition shadow-xs cursor-pointer"
-            title="Refresh Data"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
       </div>
 
       {/* Banner Feedback if replayed */}
@@ -951,24 +924,22 @@ export const ControlTowerPage: React.FC = () => {
                     navigate('/docks');
                   }
                 }}
-                className={`p-3 rounded-xl border transition cursor-pointer font-mono ${
-                  isOccupied
+                className={`p-3 rounded-xl border transition cursor-pointer font-mono ${isOccupied
                     ? 'border-blue-200 bg-blue-50/70 hover:bg-blue-100/70'
                     : isMaint
-                    ? 'border-amber-200 bg-amber-50/70 hover:bg-amber-100/70'
-                    : 'border-dashed border-slate-200 bg-slate-50/40 hover:bg-slate-100/60'
-                }`}
+                      ? 'border-amber-200 bg-amber-50/70 hover:bg-amber-100/70'
+                      : 'border-dashed border-slate-200 bg-slate-50/40 hover:bg-slate-100/60'
+                  }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="font-black text-sm text-slate-900">{dockId}</span>
                   <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                      isOccupied
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isOccupied
                         ? 'bg-blue-100 text-blue-700'
                         : isMaint
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    }`}
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
                   >
                     {isOccupied ? 'OCCUPIED' : isMaint ? 'MAINT.' : 'AVAILABLE'}
                   </span>
@@ -1029,11 +1000,10 @@ export const ControlTowerPage: React.FC = () => {
               <button
                 key={risk}
                 onClick={() => setRiskFilter(risk)}
-                className={`px-3 py-1 rounded text-xs font-mono font-medium transition ${
-                  riskFilter === risk
+                className={`px-3 py-1 rounded text-xs font-mono font-medium transition ${riskFilter === risk
                     ? 'bg-blue-600 text-white font-bold'
                     : 'text-slate-400 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 {risk}
               </button>
@@ -1074,9 +1044,8 @@ export const ControlTowerPage: React.FC = () => {
                 return (
                   <tr
                     key={s.id}
-                    className={`hover:bg-blue-50/40 transition group cursor-pointer ${
-                      isSelectedOnMap ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : ''
-                    }`}
+                    className={`hover:bg-blue-50/40 transition group cursor-pointer ${isSelectedOnMap ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : ''
+                      }`}
                     onClick={() => navigate(`/shipments/${s.id}`)}
                   >
                     <td className="py-3.5 px-4 font-bold text-slate-900">
