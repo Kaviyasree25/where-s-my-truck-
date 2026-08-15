@@ -5,10 +5,10 @@ export class PriorityEngine {
 
   /**
    * Calculate Smart Priority Score and Demurrage Risk for a trailer and shipment.
-   * Priority Score = Inventory Urgency + Dwell Time Score - ETA Variance
+   * Priority Score = Inventory Urgency + Dwell Time Score + Cold Chain Bonus + Demand Surge - ETA Variance
    */
   public evaluateTrailerPriority(trailer: Trailer, shipment?: Shipment): SmartQueueItem {
-    const dwellMinutes = trailer.dwellMinutes || 112; // default for demo if unspecified
+    const dwellMinutes = trailer.dwellMinutes || 0;
 
     // 1. Inventory Urgency (+100 for CRITICAL, +50 for HIGH, +20 for STANDARD)
     let inventoryUrgency = 20;
@@ -21,17 +21,39 @@ export class PriorityEngine {
     // 2. Dwell Time Score (+1 pt per ~3.2 minutes dwell time -> 112m dwell = +35 pts)
     const dwellTimeScore = Math.round(dwellMinutes / 3.2);
 
-    // 3. ETA Variance (-10 for +10m variance / deviation)
-    let etaVariance = trailer.etaVarianceMinutes !== undefined ? trailer.etaVarianceMinutes : 10;
+    // 3. Cold Chain Temperature Spoilage Risk Bonus (+25 for Deep Freeze, +18 for Chill)
+    let coldChainBonus = 0;
+    const tempProfile = shipment?.temperatureProfile || trailer.temperatureProfile;
+    if (tempProfile === 'DEEP_FREEZE' || trailer.trailerType === 'REFRIGERATED') {
+      coldChainBonus = 25;
+      // Exponential penalty if reefer dwells without active dock connection > 60m
+      if (dwellMinutes > 60) {
+        coldChainBonus += Math.min(20, Math.round((dwellMinutes - 60) / 4));
+      }
+    } else if (tempProfile === 'REFRIGERATED_CHILL') {
+      coldChainBonus = 18;
+    }
+
+    // 4. Product Demand Surge Bonus (+20 for Critical Surge, +12 for High Demand)
+    let demandSurgeBonus = 0;
+    const demandLevel = shipment?.productDemandLevel || trailer.productDemandLevel;
+    if (demandLevel === 'CRITICAL_SURGE') {
+      demandSurgeBonus = 20;
+    } else if (demandLevel === 'HIGH_DEMAND') {
+      demandSurgeBonus = 12;
+    }
+
+    // 5. ETA Variance (-10 for +10m variance / deviation)
+    const etaVariance = trailer.etaVarianceMinutes !== undefined ? trailer.etaVarianceMinutes : 0;
 
     // Total Priority Score calculation
-    const priorityScore = Math.max(0, inventoryUrgency + dwellTimeScore - etaVariance);
+    const priorityScore = Math.max(0, inventoryUrgency + dwellTimeScore + coldChainBonus + demandSurgeBonus - etaVariance);
 
     // Determine Priority Level
     let priorityLevel: PriorityLevel = 'NORMAL';
-    if (priorityScore >= 100) {
+    if (priorityScore >= 110) {
       priorityLevel = 'CRITICAL';
-    } else if (priorityScore >= 70) {
+    } else if (priorityScore >= 75) {
       priorityLevel = 'HIGH';
     } else if (priorityScore >= 40) {
       priorityLevel = 'NORMAL';
@@ -54,8 +76,10 @@ export class PriorityEngine {
 
     // Generate Human-Readable Explainable Reason
     let reason = '';
-    if (trailer.id === 'TR-106') {
-      reason = 'Critical inventory combined with prolonged waiting and approaching appointment risk.';
+    if (tempProfile === 'DEEP_FREEZE' || tempProfile === 'REFRIGERATED_CHILL') {
+      reason = `Cold-chain perishable freight (${tempProfile}) with ${demandLevel || 'HIGH_DEMAND'} surge factor and active dwell urgency.`;
+    } else if (trailer.id === 'TR-106') {
+      reason = 'Critical frozen inventory combined with prolonged waiting and approaching appointment risk.';
     } else {
       const urgencyText = inventoryUrgency >= 100 ? 'Critical inventory' : inventoryUrgency >= 50 ? 'High-priority cargo' : 'Standard load';
       const dwellText = dwellMinutes >= 90 ? 'prolonged waiting' : dwellMinutes >= 40 ? 'moderate dwell time' : 'recent arrival';
@@ -67,6 +91,8 @@ export class PriorityEngine {
       inventoryUrgency,
       dwellTimeScore,
       etaVariance: -etaVariance,
+      coldChainBonus,
+      demandSurgeBonus,
     };
 
     const formattedDwellHours = Math.floor(dwellMinutes / 60);
