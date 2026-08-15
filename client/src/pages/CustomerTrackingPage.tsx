@@ -127,18 +127,6 @@ export const CustomerTrackingPage: React.FC = () => {
         </div>
       ) : data ? (
         <div className="space-y-6">
-          {/* Security & Item Isolation Notice */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-slate-700 flex items-center justify-between shadow-2xs">
-            <div className="flex items-center space-x-2">
-              <Lock className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>
-                <strong>SINGLE-SHIPMENT ISOLATED VIEW:</strong> You are viewing verified telemetry for your consignment only ({data.trackingNumber}). Cumulative trailer gross weights and facility-internal dock logs are isolated.
-              </span>
-            </div>
-            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px] shrink-0">
-              ✓ SECURE ISOLATION
-            </span>
-          </div>
 
           {/* Dedicated Live Highway GPS Map */}
           {fullShipment && (
