@@ -354,8 +354,24 @@ router.get('/analytics/heatmap', (req, res) => {
 });
 
 // 11. Allocation Engine & Assignment Endpoints
+router.get('/allocation/recommendations', (req, res) => {
+  try {
+    const shipmentId = (req.query.shipmentId || req.query.trailerId) as string;
+    if (!shipmentId) {
+      const queue = store.getSmartQueue();
+      const targetId = queue[0]?.shipmentId || queue[0]?.trailerId || 'SHP-1001';
+      const rec = allocationEngine.evaluateDocks(targetId);
+      return res.json([rec]);
+    }
+    const rec = allocationEngine.evaluateDocks(shipmentId);
+    res.json([rec]);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/allocation/evaluate', (req, res) => {
-  const { shipmentId } = req.body;
+  const shipmentId = req.body.shipmentId || req.body.trailerId;
   if (!shipmentId) return res.status(400).json({ error: 'shipmentId is required' });
 
   try {
@@ -366,10 +382,24 @@ router.post('/allocation/evaluate', (req, res) => {
   }
 });
 
-router.post('/allocation/assign', (req, res) => {
-  const { shipmentId, trailerId, dockId, operatorName } = req.body;
+router.post(['/allocation/approve', '/allocation/assign'], (req, res) => {
   try {
-    const result = store.assignDock(shipmentId, trailerId, dockId, operatorName);
+    let { shipmentId, trailerId, dockId, operatorName } = req.body;
+    if (!shipmentId && !trailerId) {
+      return res.status(400).json({ error: 'shipmentId or trailerId is required' });
+    }
+    if (!dockId) {
+      return res.status(400).json({ error: 'dockId is required' });
+    }
+    if (!trailerId && shipmentId) {
+      const shp = store.getShipmentById(shipmentId);
+      trailerId = shp?.trailerId;
+    }
+    if (!shipmentId && trailerId) {
+      const tr = store.getTrailerById(trailerId);
+      shipmentId = tr?.shipmentId;
+    }
+    const result = store.assignDock(shipmentId || `SHP-${trailerId}`, trailerId || `TR-${shipmentId}`, dockId, operatorName || 'DC Operator');
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -377,9 +407,21 @@ router.post('/allocation/assign', (req, res) => {
 });
 
 router.post('/allocation/reassign', (req, res) => {
-  const { shipmentId, trailerId, oldDockId, newDockId, reason, operatorName } = req.body;
   try {
-    const result = store.reassignDock(shipmentId, trailerId, oldDockId, newDockId, reason, operatorName);
+    let { shipmentId, trailerId, oldDockId, newDockId, reason, operatorName } = req.body;
+    if (!shipmentId && trailerId) {
+      const tr = store.getTrailerById(trailerId);
+      shipmentId = tr?.shipmentId;
+    }
+    if (!trailerId && shipmentId) {
+      const shp = store.getShipmentById(shipmentId);
+      trailerId = shp?.trailerId;
+    }
+    if (!oldDockId && shipmentId) {
+      const shp = store.getShipmentById(shipmentId);
+      oldDockId = shp?.currentDockId;
+    }
+    const result = store.reassignDock(shipmentId || '', trailerId || '', oldDockId || '', newDockId, reason || 'Manual reassignment', operatorName || 'DC Operator');
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

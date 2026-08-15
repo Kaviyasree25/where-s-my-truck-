@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { getSocket } from '../services/socket';
@@ -365,9 +366,15 @@ export const YardPage: React.FC = () => {
       </div>
 
       {/* Slot Trailer Detail Modal */}
-      {selectedSlot && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 space-y-4 font-mono text-xs shadow-2xl">
+      {selectedSlot && createPortal(
+        <div 
+          onClick={() => setSelectedSlot(null)}
+          className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 space-y-4 font-mono text-xs shadow-2xl animate-fade-in"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center space-x-2">
                 <Grid className="w-5 h-5 text-blue-600" />
@@ -481,7 +488,8 @@ export const YardPage: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Yard Move Modal */}
