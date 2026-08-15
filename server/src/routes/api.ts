@@ -234,6 +234,26 @@ router.get('/docks/schedule', (req, res) => {
   res.json(snapshot.docks);
 });
 
+router.get('/schedule/horizon/:horizon', (req, res) => {
+  try {
+    const horizon = (req.params.horizon as string) || '1H';
+    const snapshot = schedulePredictionEngine.getSnapshotForHorizon(horizon as any);
+    res.json(snapshot);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/trailers/auto-schedule', (req, res) => {
+  try {
+    const { trailerId } = req.body;
+    const rec = mlRecommendationService.getRecommendationForTrailer(trailerId || 'TR-106');
+    res.json({ success: true, recommendation: rec });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/docks', (req, res) => {
   try {
     const dock = store.createOrUpdateDock(req.body);
@@ -345,7 +365,7 @@ router.get('/audit-logs', (req, res) => {
 });
 
 // 10. Analytics
-router.get('/analytics/kpis', (req, res) => {
+router.get(['/analytics', '/analytics/kpis'], (req, res) => {
   res.json(store.getAnalyticsKPIs());
 });
 
