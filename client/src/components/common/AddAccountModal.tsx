@@ -24,7 +24,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({ onClose, onSuc
     { role: 'ADMIN', label: 'Admin' },
     { role: 'OPERATOR', label: 'Operator' },
     { role: 'MANAGER', label: 'Manager' },
-    { role: 'CUSTOMER', label: 'Customer' },
+    { role: 'CUSTOMER', label: 'DC Manager' },
   ];
 
   // Find the first role that is not yet signed in

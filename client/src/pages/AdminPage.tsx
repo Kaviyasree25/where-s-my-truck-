@@ -342,7 +342,7 @@ export const AdminPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {users.map(u => (
                   <div key={u.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <span className="text-[10px] font-bold text-blue-600 block uppercase">{u.role}</span>
+                    <span className="text-[10px] font-bold text-blue-600 block uppercase">{u.role === 'CUSTOMER' ? 'DC MANAGER' : u.role}</span>
                     <span className="text-sm font-black text-slate-900 block mt-0.5">{u.name}</span>
                     <span className="text-[11px] text-slate-500 block truncate">{u.email}</span>
                     <span className="text-[10px] text-slate-400 block mt-1">{u.title}</span>

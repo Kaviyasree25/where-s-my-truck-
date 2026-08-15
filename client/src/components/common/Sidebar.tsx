@@ -74,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
       roles: ['ADMIN'], // Restricted to ADMIN only
     },
     {
-      name: 'Customer Portal',
+      name: 'DC Portal',
       path: '/customer-tracking',
       icon: UserCheck,
       roles: ['CUSTOMER', 'OPERATOR', 'MANAGER', 'ADMIN'],
@@ -95,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeExceptionsCount = 0 }) =
       <div className="space-y-4">
         <div>
           <span className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-            {currentRole === 'CUSTOMER' ? 'Customer Portal' : 'Operations Menu'}
+            {currentRole === 'CUSTOMER' ? 'DC Portal' : 'Operations Menu'}
           </span>
           <nav className="mt-2 space-y-1">
             {visibleItems.map(item => {

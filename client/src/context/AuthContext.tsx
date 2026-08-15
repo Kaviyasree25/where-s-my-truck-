@@ -65,7 +65,7 @@ export const MOCK_USERS_CREDENTIALS: Record<UserRole, AuthCredentials> = {
       name: 'Abi',
       email: 'abi@apexretail.com',
       role: 'CUSTOMER',
-      title: 'Customer Logistics Supplier Lead',
+      title: 'Distribution Center (DC) Logistics Lead',
       avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
     },
   },

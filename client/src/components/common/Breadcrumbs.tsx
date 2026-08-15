@@ -11,7 +11,7 @@ const ROUTE_LABELS: Record<string, { label: string; parentPath?: string; parentL
   '/appointments': { label: 'Carrier Appointments' },
   '/analytics': { label: 'Live Analytics & Heatmap Matrix' },
   '/admin': { label: 'Master Data & Manual Overrides' },
-  '/customer-tracking': { label: 'Customer Tracking Portal' },
+  '/customer-tracking': { label: 'DC Tracking Portal' },
 };
 
 export const Breadcrumbs: React.FC = () => {

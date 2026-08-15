@@ -63,7 +63,7 @@ export const CustomerTrackingPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setError(`No customer shipment found for tracking '${targetQuery}'`);
+      setError(`No DC consignment found for tracking '${targetQuery}'`);
       setData(null);
       setFullShipment(null);
     } finally {
@@ -76,11 +76,11 @@ export const CustomerTrackingPage: React.FC = () => {
       {/* Title Header */}
       <div className="text-center space-y-2">
         <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-mono font-bold text-blue-700 shadow-2xs">
-          <PackageSearch className="w-3.5 h-3.5" />
-          <span>CUSTOMER FREIGHT VISIBILITY PORTAL</span>
+          <Building2 className="w-3.5 h-3.5" />
+          <span>DISTRIBUTION CENTER (DC) PORTAL</span>
         </div>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-          Track Your Inbound Freight &amp; Delivery Status
+          Track Facility-to-DC Freight &amp; Consignments
         </h2>
         <p className="text-xs text-slate-500">
           Live milestone updates, cold-chain telemetry &amp; GPS highway corridor tracking
@@ -100,7 +100,7 @@ export const CustomerTrackingPage: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Enter your Tracking Number (e.g. TRK-984210 or SHP-1005)..."
+              placeholder="Enter DC Consignment / Tracking Number (e.g. TRK-984210 or SHP-1005)..."
               value={query}
               onChange={e => setQuery(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-400 font-mono"
@@ -137,7 +137,7 @@ export const CustomerTrackingPage: React.FC = () => {
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
             <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-4 gap-2">
               <div>
-                <span className="text-[10px] text-slate-400 font-mono block font-bold uppercase">YOUR TRACKING NUMBER</span>
+                <span className="text-[10px] text-slate-400 font-mono block font-bold uppercase">DC CONSIGNMENT / TRACKING NUMBER</span>
                 <span className="text-xl font-black font-mono text-slate-900">{data.trackingNumber}</span>
               </div>
               <StatusBadge status={data.status} type="shipment" />

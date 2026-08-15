@@ -97,6 +97,13 @@ export const Header: React.FC = () => {
     CUSTOMER: 'bg-amber-100 text-amber-800 border-amber-200',
   };
 
+  const roleDisplayMap: Record<string, string> = {
+    ADMIN: 'ADMIN',
+    OPERATOR: 'OPERATOR',
+    MANAGER: 'MANAGER',
+    CUSTOMER: 'DC MANAGER',
+  };
+
   return (
     <header className="h-16 border-b border-slate-200 bg-white backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-[2000] font-sans select-none">
       {/* Title & Warehouse context */}
@@ -107,14 +114,14 @@ export const Header: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-sm font-black text-slate-900 tracking-tight uppercase">
-              Inbound Operations Control Tower
+              Inbound &amp; Outbound Operations Control Tower
             </h1>
             <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-blue-50 text-blue-700 rounded-md border border-blue-200">
               FACILITY BAY-A
             </span>
           </div>
           <p className="text-[11px] text-slate-400 font-mono">
-            Supply Chain Operations &amp; Smart Allocation System
+            Supply Chain Inbound &amp; Outbound Logistics • Smart Facility Allocation System
           </p>
         </div>
       </div>
@@ -144,7 +151,7 @@ export const Header: React.FC = () => {
               <div className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
                 <span>{currentUser?.name || 'Authorized User'}</span>
                 <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-black border ${roleColorMap[currentRole] || 'bg-slate-100'}`}>
-                  {currentRole}
+                  {roleDisplayMap[currentRole] || currentRole}
                 </span>
               </div>
               <div className="text-[10px] text-slate-500 font-mono truncate max-w-[150px]">
@@ -191,7 +198,7 @@ export const Header: React.FC = () => {
 
                       <div className="flex items-center space-x-1.5 shrink-0">
                         <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${roleColorMap[session.role]}`}>
-                          {session.role}
+                          {roleDisplayMap[session.role] || session.role}
                         </span>
                         {isCurrent && <Check className="w-3.5 h-3.5 text-blue-600" />}
                       </div>

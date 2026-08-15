@@ -26,7 +26,7 @@ export const LoginPage: React.FC = () => {
     { role: 'ADMIN', label: 'Admin' },
     { role: 'OPERATOR', label: 'Operator' },
     { role: 'MANAGER', label: 'Manager' },
-    { role: 'CUSTOMER', label: 'Customer' },
+    { role: 'CUSTOMER', label: 'DC Manager' },
   ];
 
   const handleQuickFill = (role: UserRole) => {
@@ -67,7 +67,7 @@ export const LoginPage: React.FC = () => {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-mono text-blue-600 shadow-2xs">
             <Building2 className="w-4 h-4 text-blue-600" />
-            <span className="font-bold">INBOUND CONTROL TOWER</span>
+            <span className="font-bold">INBOUND &amp; OUTBOUND CONTROL TOWER</span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
             Sign In to Platform
