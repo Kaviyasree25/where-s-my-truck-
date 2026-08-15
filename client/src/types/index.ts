@@ -84,6 +84,22 @@ export interface Trailer {
   scoreBreakdown?: PriorityBreakdown;
 }
 
+export interface TrailerPosition {
+  id: string;
+  lat: number;
+  lng: number;
+  heading?: number;
+  status: string;
+  trailerType?: string;
+  shipmentId?: string;
+  carrierName?: string;
+  priority?: string;
+  risk?: string;
+  eta?: string;
+  demurrageRisk?: string;
+  hasActiveException?: boolean;
+}
+
 export type AppointmentStatus = 'ON_TIME' | 'AT_RISK' | 'DELAYED' | 'MISSED';
 
 export interface Appointment {

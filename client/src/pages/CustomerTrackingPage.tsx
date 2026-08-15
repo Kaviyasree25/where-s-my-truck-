@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { CustomerTrackingResponse } from '../types';
+import { CustomerTrackingResponse, Shipment } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { SingleShipmentMap } from '../components/map/SingleShipmentMap';
 import {
   PackageSearch,
   Search,
@@ -11,11 +12,13 @@ import {
   Building2,
   Truck,
   ArrowRight,
+  Navigation
 } from 'lucide-react';
 
 export const CustomerTrackingPage: React.FC = () => {
   const [query, setQuery] = useState('TRK-984210');
   const [data, setData] = useState<CustomerTrackingResponse | null>(null);
+  const [fullShipment, setFullShipment] = useState<Shipment | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +33,37 @@ export const CustomerTrackingPage: React.FC = () => {
     try {
       const res = await api.getCustomerTracking(targetQuery);
       setData(res);
+
+      if (res.shipmentId) {
+        try {
+          const shp = await api.getShipmentById(res.shipmentId);
+          setFullShipment(shp);
+        } catch {
+          // Construct fallback shipment object from customer response
+          setFullShipment({
+            id: res.shipmentId,
+            trackingNumber: res.trackingNumber,
+            carrierId: 'car-101',
+            carrierName: res.carrierName,
+            supplier: res.supplier,
+            origin: res.origin,
+            destination: res.destination,
+            priority: 'STANDARD',
+            loadType: 'REFRIGERATED',
+            status: res.status,
+            risk: res.hasDelayNotice ? 'WARNING' : 'NORMAL',
+            eta: res.eta,
+            scheduledAppointment: res.scheduledAppointment,
+            trailerId: 'TR-105',
+            itemsSummary: res.itemsSummary,
+            totalWeightKg: 11200,
+          });
+        }
+      }
     } catch (err: any) {
       setError(`No customer shipment found for tracking '${targetQuery}'`);
       setData(null);
+      setFullShipment(null);
     } finally {
       setLoading(false);
     }
@@ -47,10 +78,10 @@ export const CustomerTrackingPage: React.FC = () => {
           <span>CUSTOMER FREIGHT VISIBILITY PORTAL</span>
         </div>
         <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          Track Your Inbound Freight & Delivery Status
+          Track Your Inbound Freight &amp; Delivery Status
         </h2>
         <p className="text-xs text-slate-400">
-          Live milestone updates, estimated arrival, and cargo status tracking
+          Live milestone updates, estimated arrival, and real-time highway corridor GPS tracking
         </p>
       </div>
 
@@ -75,7 +106,7 @@ export const CustomerTrackingPage: React.FC = () => {
           </div>
           <button
             type="submit"
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center space-x-2"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer"
           >
             <span>Track Freight</span>
             <ArrowRight className="w-4 h-4" />
@@ -94,6 +125,11 @@ export const CustomerTrackingPage: React.FC = () => {
         </div>
       ) : data ? (
         <div className="space-y-6">
+          {/* Dedicated Live Highway GPS Map */}
+          {fullShipment && (
+            <SingleShipmentMap shipment={fullShipment} carrierName={data.carrierName} />
+          )}
+
           {/* Main Info Card */}
           <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-4 gap-2">
@@ -153,7 +189,7 @@ export const CustomerTrackingPage: React.FC = () => {
             </h3>
 
             <div className="space-y-4 font-mono text-xs">
-              {data.milestones.map((m, idx) => (
+              {data.milestones.map((m) => (
                 <div key={m.id} className="flex items-start space-x-3 relative">
                   <div className="p-1.5 rounded-full bg-emerald-500/20 text-emerald-700 border border-emerald-200 mt-0.5">
                     <CheckCircle2 className="w-4 h-4" />
@@ -176,3 +212,5 @@ export const CustomerTrackingPage: React.FC = () => {
     </div>
   );
 };
+
+export default CustomerTrackingPage;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Shipment, ShipmentStatus } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { SingleShipmentMap } from '../components/map/SingleShipmentMap';
 import {
   Search,
   Truck,
@@ -176,6 +177,9 @@ export const TrackingPage: React.FC = () => {
               })}
             </div>
           </div>
+
+          {/* Dedicated Single-Shipment Live Highway & Facility Map */}
+          <SingleShipmentMap shipment={shipment} />
 
           {/* Details Card */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
