@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -33,6 +34,14 @@ export const ReassignmentModal: React.FC<ReassignmentModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const { failedDock, impactedShipment, impactedTrailer, exception, recommendation } = data;
   const bestCandidate = recommendation?.candidateScores?.find(
     (c: any) => c.dockId === recommendation.bestDockId
@@ -59,9 +68,15 @@ export const ReassignmentModal: React.FC<ReassignmentModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-white/30 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white border border-red-300 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden animate-fade-in">
+  const modalContent = (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white border border-red-300 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
         <div className="bg-red-50 border-b border-red-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -249,4 +264,6 @@ export const ReassignmentModal: React.FC<ReassignmentModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

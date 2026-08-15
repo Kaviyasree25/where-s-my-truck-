@@ -4,6 +4,8 @@ import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import apiRouter from './routes/api.js';
 import { simulationService } from './services/simulationService.js';
+import { tickTrailerPositions, initializeRoutes } from './services/positionSimulator.js';
+import { startDockRotationSimulator } from './services/dockRotationSimulator.js';
 import { store } from './db/store.js';
 
 const app = express();
@@ -50,4 +52,20 @@ server.listen(PORT, () => {
   console.log(`📡 REST API Endpoint: http://localhost:${PORT}/api/shipments`);
   console.log(`🔌 Socket.IO Server: http://localhost:${PORT}`);
   console.log(`=======================================================`);
+
+  // Fetch OSRM road routes first, then start position ticks
+  // Trucks will follow actual highway geometry on the map
+  initializeRoutes()
+    .then(() => {
+      setInterval(() => tickTrailerPositions(io), 4000);
+    })
+    .catch((err) => {
+      console.error('Route init error — starting ticks with fallback paths:', err);
+      setInterval(() => tickTrailerPositions(io), 4000);
+    });
+
+  // Start live dock rotation simulator (ticks every 60s)
+  // Automatically advances unloading timers and rotates next queued trailer into freed dock
+  startDockRotationSimulator(io);
+  console.log('[Server] ⏱ Dock rotation simulator wired — real-time bay turnover active');
 });

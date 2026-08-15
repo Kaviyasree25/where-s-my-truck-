@@ -19,44 +19,44 @@ export const SmartQueueCard: React.FC<SmartQueueCardProps> = ({ queue, onSelectA
   const topTrailer = queue[0];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden font-sans">
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden font-sans">
       {/* Header Bar */}
-      <div className="bg-slate-900 text-white px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800">
+      <div className="bg-slate-50/80 text-slate-900 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200">
         <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
-            <Sparkles className="w-5 h-5 animate-pulse" />
+          <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 shadow-2xs">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-100">
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
                 Smart Dynamic Inbound Queue
               </h3>
-              <span className="text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">
+              <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200">
                 EXPLAINABLE AI ENGINE
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Rule-Based Priority Score: Urgency + Dwell Time - ETA Variance & Demurrage Risk
+            <p className="text-xs text-slate-500 font-mono">
+              Rule-Based Priority Score: Urgency + Dwell Time - ETA Variance &amp; Demurrage Risk
             </p>
           </div>
         </div>
 
         {/* Highest Priority Top Callout */}
         {topTrailer && (
-          <div className="bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2 flex items-center space-x-4">
+          <div className="bg-white border border-slate-200 shadow-2xs rounded-xl px-4 py-2 flex items-center space-x-4">
             <div>
-              <span className="text-[10px] uppercase font-mono text-slate-400 block">Highest Priority</span>
-              <span className="text-sm font-bold font-mono text-amber-400">{topTrailer.trailerId}</span>
+              <span className="text-[10px] uppercase font-mono text-slate-400 block font-bold">Highest Priority</span>
+              <span className="text-sm font-bold font-mono text-blue-700">{topTrailer.trailerId}</span>
             </div>
-            <div className="h-7 w-px bg-slate-700" />
+            <div className="h-7 w-px bg-slate-200" />
             <div>
-              <span className="text-[10px] uppercase font-mono text-slate-400 block">Score</span>
-              <span className="text-sm font-extrabold font-mono text-white">{topTrailer.priorityScore}</span>
+              <span className="text-[10px] uppercase font-mono text-slate-400 block font-bold">Score</span>
+              <span className="text-sm font-extrabold font-mono text-slate-900">{topTrailer.priorityScore}</span>
             </div>
-            <div className="h-7 w-px bg-slate-700" />
+            <div className="h-7 w-px bg-slate-200" />
             <div>
-              <span className="text-[10px] uppercase font-mono text-slate-400 block">Demurrage Risk</span>
-              <span className="text-xs font-bold font-mono text-red-400 uppercase">
+              <span className="text-[10px] uppercase font-mono text-slate-400 block font-bold">Demurrage Risk</span>
+              <span className="text-xs font-bold font-mono text-rose-700 uppercase">
                 {topTrailer.demurrageRisk === 'HIGH_RISK' ? 'HIGH / APPROACHING' : topTrailer.demurrageRisk}
               </span>
             </div>

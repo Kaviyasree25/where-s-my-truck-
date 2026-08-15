@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { Shipment, AuditLog } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { AllocationModal } from '../components/allocation/AllocationModal';
+import { SingleShipmentMap } from '../components/map/SingleShipmentMap';
 import {
   ArrowLeft,
   Truck,
@@ -105,6 +106,9 @@ export const ShipmentDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Live Single Shipment Route & Facility Map */}
+      <SingleShipmentMap shipment={shipment} />
 
       {/* Sections Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

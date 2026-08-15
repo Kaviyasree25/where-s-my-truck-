@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
 import { AllocationRecommendation, Shipment, DockScoreResult } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
@@ -32,6 +33,12 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
 
   useEffect(() => {
     fetchEvaluation();
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
   }, [shipment.id]);
 
   const fetchEvaluation = async () => {
@@ -64,9 +71,15 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
 
   const selectedCandidate = recommendation?.candidateScores.find(c => c.dockId === selectedDockId);
 
-  return (
-    <div className="fixed inset-0 z-50 bg-white/30 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden animate-fade-in">
+  const modalContent = (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
         <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -247,4 +260,6 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

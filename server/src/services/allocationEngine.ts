@@ -80,67 +80,102 @@ export class AllocationEngine {
       );
     }
 
+    // Cold-Chain Hard Constraint: Sub-zero Deep Freeze cargo MUST be allocated to Sub-Zero Cold-Chain Bays (D01-D04)
+    const tempProfile = shipment.temperatureProfile || trailer.temperatureProfile;
+    if (tempProfile === 'DEEP_FREEZE') {
+      const hasDeepFreeze = dock.temperatureCapability?.includes('DEEP_FREEZE');
+      if (!hasDeepFreeze) {
+        return this.createInfeasibleResult(
+          dock,
+          'HARD CONSTRAINT FAILED: Sub-zero Deep Freeze cargo requires cryogenic dock seal (-22°C to -18°C)'
+        );
+      }
+    }
+
+    // Hazmat Hard Constraint: Class 3/8 hazardous materials strictly routed to Containment Bay (D15)
+    if (shipment.loadType === 'HAZMAT' && dock.id !== 'D15') {
+      return this.createInfeasibleResult(
+        dock,
+        'HARD CONSTRAINT FAILED: Hazmat chemical cargo isolated exclusively to Containment Bay D15'
+      );
+    }
+
     // 2. SOFT WEIGHTED SCORING
     const reasons: AllocationReason[] = [];
     let totalScore = 0;
 
-    // Factor A: Capability & Equipment Fit (Max 25 pts)
-    const capabilityScore = 25;
+    // Factor A: Capability & Cold-Chain Equipment Fit (Max 25 pts)
+    let capabilityScore = 25;
+    let capabilityNote = `Fully supports ${shipment.loadType} load requirement`;
+    if (tempProfile === 'DEEP_FREEZE' || tempProfile === 'REFRIGERATED_CHILL') {
+      capabilityNote = `Verified cold-chain dock seal matching ${shipment.targetTemperatureRange || '2-4°C'}`;
+    }
     totalScore += capabilityScore;
     reasons.push({
-      factor: 'Load Capability Fit',
+      factor: 'Cold-Chain & Load Fit',
       points: capabilityScore,
       maxPoints: 25,
       satisfied: true,
-      note: `Fully supports ${shipment.loadType} load requirement`,
+      note: capabilityNote,
     });
 
-    // Factor B: Distance from Yard Slot (Max 25 pts)
-    // Yard Slot A01 is close to D04/D05 (35m), Zone B is 65m, Zone C is 110m
+    // Factor B: Distance from Yard Slot (Max 20 pts)
     let distanceMeters = 40;
-    if (shipment.currentYardSlotId?.startsWith('A')) distanceMeters = dock.id === 'D04' ? 35 : dock.id === 'D05' ? 42 : 75;
-    else if (shipment.currentYardSlotId?.startsWith('B')) distanceMeters = dock.id === 'D04' ? 60 : dock.id === 'D05' ? 55 : 90;
-    else if (shipment.currentYardSlotId?.startsWith('C')) distanceMeters = 110;
+    const slotId = shipment.currentYardSlotId || trailer.currentSlotId;
+    if (slotId?.startsWith('A')) {
+      // Zone A is closer to D01-D05
+      const dockNum = parseInt(dock.id.replace('D', ''), 10) || 1;
+      distanceMeters = 25 + dockNum * 4;
+    } else if (slotId?.startsWith('B')) {
+      distanceMeters = 55 + (parseInt(dock.id.replace('D', ''), 10) || 1) * 3;
+    } else if (slotId?.startsWith('C')) {
+      distanceMeters = 95;
+    }
 
-    const distanceScore = Math.max(5, Math.round(25 - (distanceMeters / 120) * 20));
+    const distanceScore = Math.max(5, Math.round(20 - (distanceMeters / 150) * 15));
     totalScore += distanceScore;
     reasons.push({
       factor: 'Yard Proximity',
       points: distanceScore,
-      maxPoints: 25,
+      maxPoints: 20,
       satisfied: true,
       note: `${distanceMeters} meters from current Yard Position`,
     });
 
-    // Factor C: Queue & Expected Wait Time (Max 20 pts)
+    // Factor C: Live Unload Queue & Expected Wait Time (Max 20 pts)
     const isAvailableNow = dock.status === 'AVAILABLE';
-    const queueLength = isAvailableNow ? 0 : 1;
-    const expectedWaitMinutes = isAvailableNow ? 0 : 35;
-    const waitScore = isAvailableNow ? 20 : 5;
+    let expectedWaitMinutes = 0;
+    if (!isAvailableNow) {
+      const elapsed = dock.unloadingElapsedMinutes || 20;
+      const duration = dock.unloadingDurationMinutes || 45;
+      expectedWaitMinutes = Math.max(5, duration - elapsed);
+    }
+    const waitScore = isAvailableNow ? 20 : Math.max(4, Math.round(20 - (expectedWaitMinutes / 60) * 16));
     totalScore += waitScore;
     reasons.push({
       factor: 'Queue & Wait Time',
       points: waitScore,
       maxPoints: 20,
       satisfied: isAvailableNow,
-      note: isAvailableNow ? '0 waiting queue (Immediate Availability)' : `Queue length: ${queueLength} trailer (~${expectedWaitMinutes} min wait)`,
+      note: isAvailableNow ? '0 waiting queue (Immediate Availability)' : `Occupied (Free in ~${expectedWaitMinutes} mins)`,
     });
 
-    // Factor D: Priority Matching (Max 15 pts)
-    let priorityScore = 10;
-    if (shipment.priority === 'CRITICAL') priorityScore = 15;
-    else if (shipment.priority === 'HIGH') priorityScore = 12;
-    totalScore += priorityScore;
+    // Factor D: Product Demand Surge & Spoilage Urgency (Max 20 pts)
+    let demandScore = 12;
+    const demandLevel = shipment.productDemandLevel || trailer.productDemandLevel;
+    if (demandLevel === 'CRITICAL_SURGE') demandScore = 20;
+    else if (demandLevel === 'HIGH_DEMAND') demandScore = 16;
+    totalScore += demandScore;
     reasons.push({
-      factor: 'Shipment Priority Bonus',
-      points: priorityScore,
-      maxPoints: 15,
+      factor: 'Demand Surge & Spoilage Urgency',
+      points: demandScore,
+      maxPoints: 20,
       satisfied: true,
-      note: `Priority ${shipment.priority} shipment score boost`,
+      note: `Demand velocity: ${demandLevel || 'STANDARD'} (Spoilage score: ${shipment.spoilageRiskScore || 50}/100)`,
     });
 
-    // Factor E: Appointment Proximity (Max 15 pts)
-    const appointmentScore = 14;
+    // Factor E: Appointment Window Match (Max 15 pts)
+    const appointmentScore = 15;
     totalScore += appointmentScore;
     reasons.push({
       factor: 'Appointment Window Match',
@@ -157,7 +192,7 @@ export class AllocationEngine {
       totalScore,
       reasons,
       distanceMeters,
-      queueLength,
+      queueLength: isAvailableNow ? 0 : 1,
       expectedWaitMinutes,
     };
   }

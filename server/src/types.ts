@@ -23,6 +23,21 @@ export type ShipmentStatus =
 
 export type ShipmentRisk = 'NORMAL' | 'WARNING' | 'DELAYED' | 'CRITICAL';
 
+export type TemperatureProfile =
+  | 'DEEP_FREEZE'
+  | 'REFRIGERATED_CHILL'
+  | 'CONTROLLED_AMBIENT'
+  | 'DRY_STANDARD'
+  | 'HAZMAT';
+
+export type ProductDemandLevel =
+  | 'CRITICAL_SURGE'
+  | 'HIGH_DEMAND'
+  | 'STANDARD'
+  | 'LOW';
+
+export type TimeHorizon = 'NOW' | '1H' | '2H' | '3H' | '4H' | 'ALL';
+
 export interface Shipment {
   id: string; // e.g. SHP-1005
   trackingNumber: string; // e.g. TRK-984210
@@ -43,6 +58,15 @@ export interface Shipment {
   itemsSummary: string;
   totalWeightKg: number;
   activeExceptionId?: string;
+
+  // Cold-chain & Smart Scheduling extensions
+  temperatureProfile?: TemperatureProfile;
+  targetTemperatureRange?: string; // e.g. "-20°C to -18°C" or "2°C to 4°C"
+  currentTempCelsius?: number; // e.g. -18.5
+  spoilageRiskScore?: number; // 0 - 100
+  productDemandLevel?: ProductDemandLevel;
+  warehouseEntryTime?: string; // Gate entry timestamp
+  estimatedUnloadMinutes?: number; // e.g. 45
 }
 
 export type PriorityLevel = 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW';
@@ -55,6 +79,8 @@ export interface PriorityBreakdown {
   dwellTimeScore: number;
   etaVariance: number;
   demurrageBonus?: number;
+  coldChainBonus?: number;
+  demandSurgeBonus?: number;
 }
 
 export interface Trailer {
@@ -78,6 +104,25 @@ export interface Trailer {
   demurrageRisk?: DemurrageRisk;
   scoreReason?: string;
   scoreBreakdown?: PriorityBreakdown;
+
+  // Live GPS / Position Simulator fields
+  currentLat?: number;
+  currentLng?: number;
+  destinationLat?: number;
+  destinationLng?: number;
+  headingDeg?: number;
+
+  // Cold-chain & Smart Scheduling extensions
+  temperatureProfile?: TemperatureProfile;
+  currentTempCelsius?: number;
+  targetTempCelsius?: number;
+  spoilageRiskScore?: number;
+  productDemandLevel?: ProductDemandLevel;
+  warehouseEntryTime?: string;
+  unloadingDurationMinutes?: number;
+  unloadingElapsedMinutes?: number;
+  targetDockId?: string;
+  targetDockEtaMinutes?: number;
 }
 
 export interface Carrier {
@@ -122,6 +167,13 @@ export interface YardSlot {
   rtlsTrailerId?: string;
   yardMuleTrailerId?: string;
   locationValidationStatus?: LocationValidationStatus;
+
+  // Smart Scheduling extensions
+  targetDockId?: string;
+  targetDockEtaMinutes?: number;
+  nextIncomingTrailerId?: string;
+  nextIncomingEtaMinutes?: number;
+  temperatureControlled?: boolean;
 }
 
 export type DockType = 'STANDARD' | 'REFRIGERATED' | 'HEAVY_DUTY';
@@ -138,6 +190,14 @@ export interface Dock {
   assignedTime?: string;
   estimatedCompletionTime?: string;
   maintenanceNotes?: string;
+
+  // Live Unloading & Next Queued Scheduling extensions
+  unloadingDurationMinutes?: number;
+  unloadingElapsedMinutes?: number;
+  nextQueuedTrailerId?: string;
+  nextQueuedShipmentId?: string;
+  nextQueuedEtaMinutes?: number;
+  temperatureCapability?: TemperatureProfile[];
 }
 
 export interface DockAssignment {

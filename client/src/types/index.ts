@@ -23,6 +23,21 @@ export type ShipmentStatus =
 
 export type ShipmentRisk = 'NORMAL' | 'WARNING' | 'DELAYED' | 'CRITICAL';
 
+export type TemperatureProfile =
+  | 'DEEP_FREEZE'
+  | 'REFRIGERATED_CHILL'
+  | 'CONTROLLED_AMBIENT'
+  | 'DRY_STANDARD'
+  | 'HAZMAT';
+
+export type ProductDemandLevel =
+  | 'CRITICAL_SURGE'
+  | 'HIGH_DEMAND'
+  | 'STANDARD'
+  | 'LOW';
+
+export type TimeHorizon = 'NOW' | '1H' | '2H' | '3H' | '4H' | 'ALL';
+
 export interface Shipment {
   id: string;
   trackingNumber: string;
@@ -47,6 +62,15 @@ export interface Shipment {
   dock?: Dock;
   trackingEvents?: TrackingEvent[];
   activeException?: Exception;
+
+  // Cold-chain & Smart Scheduling extensions
+  temperatureProfile?: TemperatureProfile;
+  targetTemperatureRange?: string;
+  currentTempCelsius?: number;
+  spoilageRiskScore?: number;
+  productDemandLevel?: ProductDemandLevel;
+  warehouseEntryTime?: string;
+  estimatedUnloadMinutes?: number;
 }
 
 export type PriorityLevel = 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW';
@@ -59,6 +83,8 @@ export interface PriorityBreakdown {
   dwellTimeScore: number;
   etaVariance: number;
   demurrageBonus?: number;
+  coldChainBonus?: number;
+  demandSurgeBonus?: number;
 }
 
 export interface Trailer {
@@ -82,6 +108,36 @@ export interface Trailer {
   demurrageRisk?: DemurrageRisk;
   scoreReason?: string;
   scoreBreakdown?: PriorityBreakdown;
+
+  // Cold-chain & Smart Scheduling extensions
+  temperatureProfile?: TemperatureProfile;
+  currentTempCelsius?: number;
+  targetTempCelsius?: number;
+  spoilageRiskScore?: number;
+  productDemandLevel?: ProductDemandLevel;
+  warehouseEntryTime?: string;
+  unloadingDurationMinutes?: number;
+  unloadingElapsedMinutes?: number;
+  targetDockId?: string;
+  targetDockEtaMinutes?: number;
+}
+
+export interface TrailerPosition {
+  id: string;
+  lat: number;
+  lng: number;
+  heading?: number;
+  status: string;
+  trailerType?: string;
+  shipmentId?: string;
+  carrierName?: string;
+  priority?: string;
+  risk?: string;
+  eta?: string;
+  demurrageRisk?: string;
+  hasActiveException?: boolean;
+  temperatureProfile?: TemperatureProfile;
+  currentTempCelsius?: number;
 }
 
 export type AppointmentStatus = 'ON_TIME' | 'AT_RISK' | 'DELAYED' | 'MISSED';
@@ -117,6 +173,13 @@ export interface YardSlot {
   rtlsTrailerId?: string;
   yardMuleTrailerId?: string;
   locationValidationStatus?: LocationValidationStatus;
+
+  // Smart Scheduling extensions
+  targetDockId?: string;
+  targetDockEtaMinutes?: number;
+  nextIncomingTrailerId?: string;
+  nextIncomingEtaMinutes?: number;
+  temperatureControlled?: boolean;
 }
 
 export interface YardState {
@@ -142,6 +205,14 @@ export interface Dock {
   assignedTime?: string;
   estimatedCompletionTime?: string;
   maintenanceNotes?: string;
+
+  // Live Unloading & Next Queued Scheduling extensions
+  unloadingDurationMinutes?: number;
+  unloadingElapsedMinutes?: number;
+  nextQueuedTrailerId?: string;
+  nextQueuedShipmentId?: string;
+  nextQueuedEtaMinutes?: number;
+  temperatureCapability?: TemperatureProfile[];
 }
 
 export interface TrackingEvent {
