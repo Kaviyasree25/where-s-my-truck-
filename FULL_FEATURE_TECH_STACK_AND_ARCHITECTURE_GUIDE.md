@@ -142,12 +142,11 @@ graph TD
 ### 🎛️ Feature 8: Chaos Engineering & Demo Simulation Toolbar
 * **What We Used:** `simulationService.ts`, `/api/simulation/trigger`, WebSocket broadcasts.
 * **Simulation Buttons:**
-  * `🛡️ Simulate Sensor Match`: Resolves yard IoT discrepancy.
-  * `🛡️ Simulate Location Mismatch`: Triggers 3-way sensor mismatch on Slot `A42`.
-  * `🚫 Simulate Dock Failure (D04)`: Breaks bay D04 and pops up ML dynamic re-allocation modal.
-  * `⏱️ Simulate ETA Delay (+45m)`: Delays inbound truck in highway traffic.
-  * `⚠️ Simulate Congestion (>80%)`: Surges yard occupancy and prioritizes demurrage risk.
-  * `🔄 Replay Truck Routes`: Restarts moving truck GPS replay from origin cities.
+  * `🔄 Replay Truck Routes`: Restarts moving truck GPS replay from origin dispatch points.
+  * `🚫 Simulate Dock Failure`: Breaks bay D04 and pops up ML dynamic re-allocation modal.
+  * `⏱️ Simulate ETA Delay`: Injects +45m highway traffic delay for inbound truck.
+  * `⚠️ Simulate Congestion`: Surges yard occupancy threshold (>80%) and prioritizes demurrage risk.
+  * `❄️ Simulate Cryo`: Triggers emergency cold-chain override bumping dry van to Yard Slot A02.
   * `🔄 Reset Demo`: Restores clean default state across all 50 trucks and 15 docks.
 
 ---
