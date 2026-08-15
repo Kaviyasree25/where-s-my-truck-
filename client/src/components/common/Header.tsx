@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
@@ -31,6 +31,7 @@ export const Header: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -47,6 +48,22 @@ export const Header: React.FC = () => {
       socket.off('disconnect', onDisconnect);
     };
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   const handleSwitchAccount = (email: string, role: UserRole) => {
     switchAccount(email);
@@ -81,7 +98,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40 font-sans select-none">
+    <header className="h-16 border-b border-slate-200 bg-white backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-[2000] font-sans select-none">
       {/* Title & Warehouse context */}
       <div className="flex items-center space-x-4">
         <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shadow-2xs">
@@ -113,7 +130,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Multi-Account Selector Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center space-x-3 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition shadow-2xs cursor-pointer"
@@ -138,7 +155,7 @@ export const Header: React.FC = () => {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-2xl z-50 p-2 space-y-1.5 font-sans animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-2xl z-[2001] p-2 space-y-1.5 font-sans animate-in fade-in zoom-in-95 duration-100">
               <div className="px-3 py-2 border-b border-slate-100 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
                 <span>Active Account Sessions</span>
                 <span className="text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
