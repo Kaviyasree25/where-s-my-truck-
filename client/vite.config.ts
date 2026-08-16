@@ -15,5 +15,8 @@ export default defineConfig({
         ws: true,
       },
     },
+    allowedHosts: [
+      'c947-2401-4900-1ce0-6e68-5dc5-7b39-69aa-886f.ngrok-free.app'
+    ]
   },
 });

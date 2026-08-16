@@ -1,6 +1,6 @@
 import React from 'react';
 import { TimeHorizon } from '../../types';
-import { Radio } from 'lucide-react';
+import { useSlidingIndicator } from '../../hooks/useSlidingIndicator';
 
 interface TimeHorizonFilterProps {
   value: TimeHorizon;
@@ -15,6 +15,8 @@ export const TimeHorizonFilter: React.FC<TimeHorizonFilterProps> = ({
   counts,
   className = '',
 }) => {
+  const { containerRef, indicatorStyle } = useSlidingIndicator(value);
+
   const horizons: {
     id: TimeHorizon;
     label: string;
@@ -54,14 +56,29 @@ export const TimeHorizonFilter: React.FC<TimeHorizonFilterProps> = ({
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-3 p-2 bg-white rounded-2xl border border-slate-200/90 shadow-xs font-sans ${className}`}
+      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2 bg-white rounded-2xl border border-slate-200/90 shadow-xs font-sans min-w-0 max-w-full ${className}`}
     >
-      <div className="flex items-center space-x-2 px-2 text-xs font-mono font-bold text-slate-700">
-        <span className="w-2 h-2 rounded-full bg-blue-600" />
-        <span className="tracking-tight uppercase">Operations Timeline:</span>
+      <div className="flex items-center space-x-2 px-2 text-xs font-mono font-bold text-slate-700 shrink-0">
+        <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+        <span className="tracking-tight uppercase whitespace-nowrap">Operations Timeline:</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div
+        ref={containerRef}
+        className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 overflow-x-auto min-w-0 max-w-full px-1 pb-1 sm:pb-1 shrink-0 no-scrollbar touch-pan-x relative"
+      >
+        {/* Single persistent sliding pill with zero distortion and perfect rounded corners */}
+        <div
+          className="absolute top-0 left-0 bg-blue-600 rounded-lg shadow-xs pointer-events-none transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+          style={{
+            transform: indicatorStyle.transform,
+            width: `${indicatorStyle.width}px`,
+            height: `${indicatorStyle.height}px`,
+            opacity: indicatorStyle.opacity,
+            willChange: 'transform, width',
+          }}
+        />
+
         {horizons.map(h => {
           const isSelected = value === h.id || (value === 'ALL' && h.id === 'ALL');
           const count = counts ? counts[h.id] : undefined;
@@ -69,25 +86,26 @@ export const TimeHorizonFilter: React.FC<TimeHorizonFilterProps> = ({
           return (
             <button
               key={h.id}
+              data-active={isSelected}
               onClick={() => onChange(h.id)}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border ${
+              className={`relative flex items-center space-x-1.5 sm:space-x-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono font-bold shrink-0 cursor-pointer select-none border-0 bg-transparent transition-colors duration-150 z-10 ${
                 isSelected
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs font-extrabold'
-                  : 'bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'text-white font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {h.id === 'NOW' && (
-                <span className="relative flex h-2 w-2">
+                <span className="relative z-10 flex h-2 w-2 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
               )}
-              <span>{h.label}</span>
+              <span className="relative z-10 whitespace-nowrap">{h.label}</span>
               {count !== undefined && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold ${
+                  className={`relative z-10 px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold whitespace-nowrap transition-colors ${
                     isSelected
-                      ? 'bg-blue-700 text-white'
+                      ? 'bg-blue-700/90 text-white'
                       : 'bg-slate-200/80 text-slate-700'
                   }`}
                 >
