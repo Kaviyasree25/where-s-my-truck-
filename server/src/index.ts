@@ -14,6 +14,26 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// Root & Health Check Endpoints
+app.get('/', (req, res) => {
+  res.json({
+    status: 'OK',
+    service: 'where-s-my-truck-control-tower',
+    healthy: true,
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    healthy: true,
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Mount API router
 app.use('/api', apiRouter);
 

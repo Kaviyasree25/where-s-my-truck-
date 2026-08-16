@@ -9,6 +9,16 @@ import { authenticateUser, requireAuth, requireRole } from '../services/authServ
 
 const router = Router();
 
+// Health Check Endpoint
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    healthy: true,
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // 0. Authentication Endpoints (JWT HMAC-SHA256)
 router.post('/auth/login', (req, res) => {
   const { email, password } = req.body;
