@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, MOCK_USERS_CREDENTIALS } from '../context/AuthContext';
 import { UserRole } from '../types';
+import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 import {
   Building2,
   Lock,
@@ -19,6 +20,7 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>(MOCK_USERS_CREDENTIALS['ADMIN'].email);
   const [password, setPassword] = useState<string>(MOCK_USERS_CREDENTIALS['ADMIN'].plainPassword);
   const [selectedRole, setSelectedRole] = useState<UserRole>('ADMIN');
+  const { containerRef: roleContainerRef, indicatorStyle: roleIndicatorStyle } = useSlidingIndicator(selectedRole);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,7 +43,6 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
     try {
       const res = await login(email, password);
       if (res.success && res.role) {
@@ -84,21 +85,37 @@ export const LoginPage: React.FC = () => {
             <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
               Quick Fill Demo Credentials
             </label>
-            <div className="grid grid-cols-4 gap-2">
-              {rolePills.map(item => (
-                <button
-                  key={item.role}
-                  type="button"
-                  onClick={() => handleQuickFill(item.role)}
-                  className={`py-2 px-2 rounded-xl text-xs font-mono font-bold transition border text-center cursor-pointer ${
-                    selectedRole === item.role
-                      ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-500/10'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div ref={roleContainerRef} className="grid grid-cols-4 gap-2 relative">
+              {/* Single persistent sliding indicator with zero distortion */}
+              <div
+                className="absolute top-0 left-0 bg-blue-50 border border-blue-300 rounded-xl ring-2 ring-blue-500/10 shadow-xs pointer-events-none transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+                style={{
+                  transform: roleIndicatorStyle.transform,
+                  width: `${roleIndicatorStyle.width}px`,
+                  height: `${roleIndicatorStyle.height}px`,
+                  opacity: roleIndicatorStyle.opacity,
+                  willChange: 'transform, width',
+                }}
+              />
+
+              {rolePills.map(item => {
+                const isActive = selectedRole === item.role;
+                return (
+                  <button
+                    key={item.role}
+                    type="button"
+                    data-active={isActive}
+                    onClick={() => handleQuickFill(item.role)}
+                    className={`relative py-2 px-2 rounded-xl text-xs font-mono font-bold text-center cursor-pointer select-none border transition-colors duration-150 z-10 ${
+                      isActive
+                        ? 'text-blue-700 font-extrabold bg-transparent border-transparent'
+                        : 'text-slate-600 hover:text-slate-900 bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

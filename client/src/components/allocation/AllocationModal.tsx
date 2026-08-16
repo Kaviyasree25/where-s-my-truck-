@@ -74,42 +74,42 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
   const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
+      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-600">
-              <Building2 className="w-6 h-6" />
+        <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shrink-0">
+              <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 tracking-wide">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-wide truncate">
                 SMART DOCK ALLOCATION RECOMMENDATION ENGINE
               </h3>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-[11px] sm:text-xs text-slate-400 font-mono truncate">
                 Shipment {shipment.id} | Trailer {shipment.trailerId} ({shipment.loadType})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[75vh] overflow-y-auto">
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              <span className="text-xs text-slate-400 font-mono">
-                Running constraint validation & weighted dock scoring...
+              <span className="text-xs font-mono text-slate-400">
+                Evaluating candidate docks against cold-chain, turnaround, and queue constraints...
               </span>
             </div>
           ) : error ? (
@@ -119,42 +119,44 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           ) : (
             recommendation && (
               <>
-                {/* System Summary Explanation Card */}
-                <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-2">
-                  <div className="flex items-center space-x-2 text-blue-600">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      Explainable Allocation Summary
-                    </span>
+                {/* AI Explanation Banner */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-slate-50 to-indigo-500/10 border border-blue-200/50 space-y-1.5">
+                  <div className="flex items-center space-x-2 text-blue-600 font-bold text-xs uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span>Algorithmic Recommendation Summary</span>
                   </div>
-                  <p className="text-xs text-slate-800 font-mono leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    "{recommendation.explanation}"
+                  <p className="text-xs text-slate-700 font-mono leading-relaxed">
+                    {recommendation.explanation}
                   </p>
                 </div>
 
-                {/* Docks Ranking Table */}
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-3">
-                    Evaluated Dock Candidates (Hard Constraints + Soft Weighted Ranking)
-                  </span>
+                {/* Candidate Doors List */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-slate-400 uppercase font-bold">Candidate Dock Doors</span>
+                    <span className="text-slate-500">Ranked by Total Weighted Score (0-100)</span>
+                  </div>
+
                   <div className="space-y-2">
-                    {recommendation.candidateScores.map((candidate: DockScoreResult) => {
-                      const isSelected = selectedDockId === candidate.dockId;
+                    {recommendation.candidateScores.map((candidate) => {
+                      const isSelected = candidate.dockId === selectedDockId;
                       return (
                         <div
                           key={candidate.dockId}
-                          onClick={() => candidate.isFeasible && setSelectedDockId(candidate.dockId)}
-                          className={`p-4 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                          onClick={() => {
+                            if (candidate.isFeasible) setSelectedDockId(candidate.dockId);
+                          }}
+                          className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl border transition cursor-pointer gap-2 sm:gap-4 ${
                             !candidate.isFeasible
-                              ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                              ? 'opacity-60 bg-slate-50 border-slate-200 cursor-not-allowed'
                               : isSelected
                               ? 'bg-blue-50 border-blue-300 text-slate-900 shadow-md'
                               : 'bg-slate-50 border-slate-200 hover:border-slate-200 text-slate-700'
                           }`}
                         >
-                          <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-3 sm:space-x-4">
                             <div
-                              className={`p-2.5 rounded-lg font-mono font-bold text-sm ${
+                              className={`p-2.5 rounded-lg font-mono font-bold text-sm shrink-0 ${
                                 !candidate.isFeasible
                                   ? 'bg-red-50 text-red-600 border border-red-200'
                                   : isSelected
@@ -164,8 +166,8 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                             >
                               {candidate.dockId}
                             </div>
-                            <div>
-                              <div className="flex items-center space-x-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <span className="font-bold text-sm text-slate-900">
                                   {candidate.dockName}
                                 </span>
@@ -188,7 +190,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                           </div>
 
                           {candidate.isFeasible ? (
-                            <div className="text-right">
+                            <div className="text-left sm:text-right shrink-0">
                               <div className="text-lg font-bold font-mono text-emerald-700">
                                 {candidate.totalScore}{' '}
                                 <span className="text-xs text-slate-400">/ 100</span>
@@ -198,7 +200,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                               </span>
                             </div>
                           ) : (
-                            <ShieldAlert className="w-5 h-5 text-red-600" />
+                            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
                           )}
                         </div>
                       );
@@ -218,12 +220,17 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                           key={idx}
                           className="flex items-center justify-between p-2.5 rounded bg-white border border-slate-200 text-xs"
                         >
-                          <div>
-                            <span className="font-semibold text-slate-800 block">{r.factor}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">{r.note}</span>
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle2
+                              className={`w-4 h-4 ${r.satisfied ? 'text-emerald-700' : 'text-slate-400'}`}
+                            />
+                            <div>
+                              <span className="font-semibold text-slate-800 block">{r.factor}</span>
+                              <span className="text-[10px] text-slate-400">{r.note}</span>
+                            </div>
                           </div>
-                          <span className="font-mono text-emerald-700 font-bold ml-2">
-                            +{r.points} pts
+                          <span className="font-mono font-bold text-blue-600">
+                            +{r.points} / {r.maxPoints} pts
                           </span>
                         </div>
                       ))}
@@ -236,10 +243,10 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+        <div className="bg-slate-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-100 text-xs font-semibold transition"
+            className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-semibold transition cursor-pointer"
           >
             Cancel
           </button>
@@ -247,7 +254,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           <button
             onClick={handleAssign}
             disabled={submitting || !selectedDockId}
-            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center space-x-2 transition disabled:opacity-50 shadow-lg shadow-slate-200"
+            className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center space-x-2 transition disabled:opacity-50 shadow-sm cursor-pointer"
           >
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />

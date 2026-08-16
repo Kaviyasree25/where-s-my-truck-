@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, Polyline, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -7,6 +8,7 @@ import { api } from '../services/api';
 import { getSocket } from '../services/socket';
 import { Shipment, Dock, AnalyticsKPIs, SmartQueueItem, MLRecommendationResponse, TimeHorizon } from '../types';
 import { KPICard } from '../components/common/KPICard';
+import { AnimatedCounter } from '../components/common/AnimatedCounter';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { AllocationModal } from '../components/allocation/AllocationModal';
 import { ReassignmentModal } from '../components/common/ReassignmentModal';
@@ -14,11 +16,13 @@ import { SmartQueueCard } from '../components/common/SmartQueueCard';
 import { MLRecommendationBadge } from '../components/common/MLRecommendationBadge';
 import { MLModelModal } from '../components/common/MLModelModal';
 import { TimeHorizonFilter } from '../components/common/TimeHorizonFilter';
+import { MapGestureOverlay } from '../components/map/MapGestureOverlay';
+import { useSlidingIndicator } from '../hooks/useSlidingIndicator';
 import {
   Truck, Building2, AlertTriangle, Grid, Search,
   SlidersHorizontal, Sparkles, ArrowRight, RefreshCw, Cpu, Navigation,
   Compass, MapPin, Gauge, ShieldAlert, X, Eye, RotateCcw, Route, CheckCircle2,
-  ZoomIn, Clock, Box, PackageCheck, Scale
+  ZoomIn, Clock, Box, PackageCheck, Scale, Minimize2, Maximize2, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 // ─── Leaflet Icon Asset Fix ──────────────────────────────────────────────────
@@ -202,10 +206,12 @@ function FullWidthControlTowerMap({
   const mapRef = useRef<L.Map | null>(null);
   const [mapFilter, setMapFilter] = useState<'ALL' | 'EN_ROUTE' | 'IN_YARD' | 'AT_DOCK'>('ALL');
   const [telemetryInfo, setTelemetryInfo] = useState<any>(null);
+  const [isHudMinimized, setIsHudMinimized] = useState<boolean>(false);
 
   // When trailer is selected, fetch dynamic live telemetry
   useEffect(() => {
     if (selectedTrailer) {
+      setIsHudMinimized(false);
       api.getTrailerRoute(selectedTrailer)
         .then(setTelemetryInfo)
         .catch(() => setTelemetryInfo(null));
@@ -278,11 +284,11 @@ function FullWidthControlTowerMap({
         </div>
 
         {/* Quick Filter Tabs & Controls */}
-        <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
-          <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs font-mono text-xs">
+        <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-1 sm:pb-0 shrink-0">
+          <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs font-mono text-xs shrink-0">
             <button
               onClick={() => setMapFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition ${mapFilter === 'ALL'
+              className={`px-2.5 py-1 rounded-lg font-bold transition whitespace-nowrap shrink-0 cursor-pointer ${mapFilter === 'ALL'
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-500 hover:text-slate-900'
                 }`}
@@ -291,53 +297,53 @@ function FullWidthControlTowerMap({
             </button>
             <button
               onClick={() => setMapFilter('EN_ROUTE')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${mapFilter === 'EN_ROUTE'
+              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 whitespace-nowrap shrink-0 cursor-pointer ${mapFilter === 'EN_ROUTE'
                   ? 'bg-emerald-600 text-white'
                   : 'text-slate-500 hover:text-slate-900'
                 }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span>En Route ({enRouteCount})</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+              <span className="whitespace-nowrap">En Route ({enRouteCount})</span>
             </button>
             <button
               onClick={() => setMapFilter('IN_YARD')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${mapFilter === 'IN_YARD'
+              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 whitespace-nowrap shrink-0 cursor-pointer ${mapFilter === 'IN_YARD'
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-500 hover:text-slate-900'
                 }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-              <span>Yard ({inYardCount})</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+              <span className="whitespace-nowrap">Yard ({inYardCount})</span>
             </button>
             <button
               onClick={() => setMapFilter('AT_DOCK')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 ${mapFilter === 'AT_DOCK'
+              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center space-x-1 whitespace-nowrap shrink-0 cursor-pointer ${mapFilter === 'AT_DOCK'
                   ? 'bg-purple-600 text-white'
                   : 'text-slate-500 hover:text-slate-900'
                 }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-              <span>Docks ({atDockCount})</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0"></span>
+              <span className="whitespace-nowrap">Docks ({atDockCount})</span>
             </button>
           </div>
 
           {/* Focus DC-1 Facility (Solves overlapping issue) */}
           <button
             onClick={handleZoomToFacility}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-mono text-xs font-bold shadow-xs transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-mono text-xs font-bold shadow-xs transition whitespace-nowrap shrink-0 cursor-pointer"
             title="Zoom directly into DC-1 facility bays and yard slots"
           >
-            <Building2 className="w-3.5 h-3.5 text-blue-600" />
-            <span>Focus Facility</span>
+            <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span className="whitespace-nowrap">Focus Facility</span>
           </button>
 
           <button
             onClick={handleResetCamera}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 font-mono text-xs font-bold shadow-xs hover:bg-slate-50 transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 font-mono text-xs font-bold shadow-xs hover:bg-slate-50 transition whitespace-nowrap shrink-0 cursor-pointer"
             title="Reset Regional Map Bounds"
           >
-            <Compass className="w-3.5 h-3.5 text-blue-600" />
-            <span className="hidden sm:inline">Reset View</span>
+            <Compass className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">Reset View</span>
           </button>
         </div>
       </div>
@@ -360,6 +366,9 @@ function FullWidthControlTowerMap({
           />
 
           <ZoomControl position="bottomright" />
+
+          {/* 2-Finger Mobile Touch Gesture Overlay */}
+          <MapGestureOverlay />
 
           {/* Deselect trailer when clicking on empty map background */}
           <MapClickHandler onDeselect={() => onSelectTrailer(null)} />
@@ -507,169 +516,160 @@ function FullWidthControlTowerMap({
 
         {/* ─── Floating Google Maps Telemetry HUD (Selected Truck) ─── */}
         {activeRoute && activeRoute.currentPos && (
-          <div className="absolute bottom-4 left-4 z-[400] w-[420px] max-w-[calc(100%-2rem)] bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-2xl p-4 font-mono transition-all animate-in fade-in slide-in-from-bottom-2">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                  <Truck className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-black text-slate-900 text-sm">{activeRoute.trailerId}</span>
-                    <StatusBadge status={activeRoute.currentPos.status} type="shipment" size="sm" />
-                    {activeRoute.shipment && (
-                      <span className="text-[10px] font-mono text-slate-400 font-normal">
-                        ({activeRoute.shipment.id})
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-500 truncate max-w-[220px]">
-                    {activeRoute.shipment?.carrierName || activeRoute.currentPos.carrierName}
-                  </div>
-                </div>
+          isHudMinimized ? (
+            /* Minimized Sleek Pill: Zero obstruction of map view */
+            <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 z-[400] bg-white/95 backdrop-blur-md rounded-xl border border-slate-200/90 shadow-xl px-2.5 sm:px-3 py-1.5 font-mono text-xs flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-1 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                <Truck className="w-3.5 h-3.5" />
               </div>
-              <button
-                onClick={() => onSelectTrailer(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                title="Dismiss Route"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <span className="font-extrabold text-slate-900 text-xs whitespace-nowrap">{activeRoute.trailerId}</span>
+              <StatusBadge status={activeRoute.currentPos.status} type="shipment" size="sm" />
+              {activeRoute.isEnRoute && (
+                <span className="text-[11px] text-slate-600 font-bold hidden sm:inline whitespace-nowrap">
+                  {telemetryInfo?.speedMph ? `${telemetryInfo.speedMph} mph` : 'En Route'} • {telemetryInfo?.distanceRemainingMiles ? `~${telemetryInfo.distanceRemainingMiles} mi` : ''}
+                </span>
+              )}
+              <div className="flex items-center space-x-1 pl-1 border-l border-slate-200 shrink-0">
+                <button
+                  onClick={() => setIsHudMinimized(false)}
+                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                  title="Expand Telemetry Details"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => onSelectTrailer(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  title="Close Selection"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-
-            {/* IF EN_ROUTE: Show Highway Corridor & Speed Telemetry */}
-            {activeRoute.isEnRoute ? (
-              <>
-                <div className="py-2.5 text-[11px] text-slate-700 space-y-1">
-                  <div className="flex items-start justify-between">
-                    <span className="text-slate-400 text-[10px]">ORIGIN</span>
-                    <span className="font-semibold text-right truncate max-w-[220px]">
-                      {activeRoute.shipment?.origin || 'Midwest Dispatch Hub'}
-                    </span>
+          ) : (
+            /* Expanded Compact Card: Clean and unobtrusive */
+            <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-auto z-[400] w-auto sm:w-[340px] max-w-[calc(100%-1rem)] sm:max-w-sm max-h-[55vh] overflow-y-auto bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-2xl p-2.5 sm:p-3 font-mono transition-all animate-in fade-in slide-in-from-bottom-2 text-xs no-scrollbar">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                    <Truck className="w-4 h-4" />
                   </div>
-                  <div className="flex items-center justify-center py-0.5">
-                    <span className="w-full border-t border-dashed border-slate-200 flex-1"></span>
-                    <span className="px-2 text-[10px] text-blue-600 font-bold bg-blue-50 rounded-full py-0.5 mx-1 flex items-center space-x-1">
-                      <Route className="w-3 h-3" />
-                      <span>{telemetryInfo?.highway || 'OSRM Highway Corridor'}</span>
-                    </span>
-                    <span className="w-full border-t border-dashed border-slate-200 flex-1"></span>
-                  </div>
-                  <div className="flex items-start justify-between">
-                    <span className="text-slate-400 text-[10px]">DESTINATION</span>
-                    <span className="font-semibold text-right text-blue-700">
-                      {activeRoute.shipment?.destination || 'Naperville DC-1 (Inbound Bay)'}
-                    </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-extrabold text-slate-900 text-xs whitespace-nowrap">{activeRoute.trailerId}</span>
+                      <StatusBadge status={activeRoute.currentPos.status} type="shipment" size="sm" />
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate max-w-[180px]">
+                      {activeRoute.shipment?.carrierName || activeRoute.currentPos.carrierName}
+                    </div>
                   </div>
                 </div>
-
-                {/* Live Speed & Remaining Distance */}
-                <div className="grid grid-cols-3 gap-2 py-2 bg-slate-50/80 rounded-xl p-2 border border-slate-200/70 text-center mb-2.5">
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-sans uppercase">Speed</span>
-                    <span className="font-extrabold text-slate-800 text-xs flex items-center justify-center space-x-0.5">
-                      <Gauge className="w-3 h-3 text-blue-500 mr-0.5" />
-                      <span>{telemetryInfo?.speedMph ? `${telemetryInfo.speedMph} mph` : '62 mph'}</span>
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-sans uppercase">Remaining</span>
-                    <span className="font-extrabold text-emerald-600 text-xs">
-                      {telemetryInfo?.distanceRemainingMiles ? `~${telemetryInfo.distanceRemainingMiles} mi` : '~85 mi'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-sans uppercase">Traffic Flow</span>
-                    <span className="font-bold text-slate-700 text-[10px] truncate block">
-                      {telemetryInfo?.trafficStatus || 'Clear Cruise'}
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* IF IN_YARD / AT_DOCK: Show Stationed Location & Dwell Metrics */
-              <>
-                <div className="py-2.5 text-[11px] text-slate-700 space-y-1">
-                  <div className="flex items-start justify-between">
-                    <span className="text-slate-400 text-[10px]">CURRENT LOCATION</span>
-                    <span className="font-bold text-blue-700 text-right">
-                      {activeRoute.currentPos.status === 'AT_DOCK'
-                        ? `Dock Bay ${activeRoute.shipment?.currentDockId || 'D01'} (Unloading Bay)`
-                        : `Yard Slot ${activeRoute.shipment?.currentYardSlotId || 'A42'} (Staging Area)`}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between">
-                    <span className="text-slate-400 text-[10px]">SUPPLIER</span>
-                    <span className="font-semibold text-right text-slate-800 truncate max-w-[220px]">
-                      {activeRoute.shipment?.supplier || 'Supplier Network'}
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-between">
-                    <span className="text-slate-400 text-[10px]">CARGO TYPE</span>
-                    <span className="font-semibold text-right text-slate-800">
-                      {activeRoute.shipment?.loadType || activeRoute.currentPos.trailerType || 'DRY_VAN'} • {activeRoute.shipment?.totalWeightKg ? `${activeRoute.shipment.totalWeightKg.toLocaleString()} kg` : 'Standard'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stationed Status & Dwell Time */}
-                <div className="grid grid-cols-3 gap-2 py-2 bg-slate-50/80 rounded-xl p-2 border border-slate-200/70 text-center mb-2.5">
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-sans uppercase">Motion</span>
-                    <span className="font-extrabold text-slate-600 text-xs flex items-center justify-center space-x-0.5">
-                      <span>0 mph (Parked)</span>
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-sans uppercase">Dwell Time</span>
-                    <span className="font-extrabold text-amber-600 text-xs flex items-center justify-center space-x-0.5">
-                      <Clock className="w-3 h-3 text-amber-500 mr-0.5" />
-                      <span>{telemetryInfo?.dwellMinutes || 45} mins</span>
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-sans uppercase">Status</span>
-                    <span className="font-bold text-slate-800 text-[10px] truncate block">
-                      {activeRoute.currentPos.status === 'AT_DOCK' ? 'Unloading' : 'Staged in Yard'}
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Manifest Items Summary Banner */}
-            {activeRoute.shipment?.itemsSummary && (
-              <div className="mb-2.5 p-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[10px] text-slate-700">
-                <div className="flex items-center space-x-1.5 text-slate-500 font-bold mb-0.5 uppercase tracking-wider text-[9px]">
-                  <Box className="w-3 h-3 text-blue-500" />
-                  <span>Manifest Cargo</span>
-                </div>
-                <div className="font-semibold text-slate-900 truncate">
-                  {activeRoute.shipment.itemsSummary}
+                <div className="flex items-center space-x-1 shrink-0">
+                  <button
+                    onClick={() => setIsHudMinimized(true)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                    title="Minimize Card"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onSelectTrailer(null)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                    title="Dismiss Route"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-            )}
 
-            {/* Demurrage Risk */}
-            {activeRoute.currentPos.demurrageRisk && activeRoute.currentPos.demurrageRisk !== 'NORMAL' && (
-              <div className="mb-2.5 p-2 rounded-lg bg-amber-50 border border-amber-200 flex items-center space-x-2 text-[10px] text-amber-800 font-bold">
-                <ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>Demurrage Alert: {activeRoute.currentPos.demurrageRisk.replace('_', ' ')}</span>
-              </div>
-            )}
+              {/* EN_ROUTE: Compact Highway Corridor & Telemetry */}
+              {activeRoute.isEnRoute ? (
+                <>
+                  <div className="py-2 text-[11px] text-slate-700 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 text-[10px] uppercase font-bold">Corridor</span>
+                      <span className="px-2 py-0.5 text-[10px] text-blue-700 font-bold bg-blue-50 rounded-full border border-blue-200/60 truncate max-w-[180px]">
+                        {telemetryInfo?.highway || 'I-94 / I-80 Highway Corridor'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400">Route</span>
+                      <span className="font-semibold text-right text-slate-800 truncate max-w-[200px]">
+                        {activeRoute.originName} ➔ Naperville DC-1
+                      </span>
+                    </div>
+                  </div>
 
-            {/* Manifest Button */}
-            {activeRoute.currentPos.shipmentId && (
-              <button
-                onClick={() => window.location.assign(`/shipments/${activeRoute.currentPos?.shipmentId}`)}
-                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center space-x-1.5 shadow-sm transition"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Inspect Full Manifest ({activeRoute.currentPos.shipmentId})</span>
-              </button>
-            )}
-          </div>
+                  {/* 3 Metric Chips */}
+                  <div className="grid grid-cols-3 gap-1.5 py-1.5 bg-slate-50 rounded-xl px-2 border border-slate-200/70 text-center mb-2">
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Speed</span>
+                      <span className="font-extrabold text-slate-800 text-xs">
+                        {telemetryInfo?.speedMph ? `${telemetryInfo.speedMph} mph` : '64 mph'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Remaining</span>
+                      <span className="font-extrabold text-emerald-600 text-xs">
+                        {telemetryInfo?.distanceRemainingMiles ? `~${telemetryInfo.distanceRemainingMiles} mi` : '~85 mi'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Traffic</span>
+                      <span className="font-semibold text-slate-700 text-[10px] truncate block">
+                        {telemetryInfo?.trafficStatus || 'Clear Cruise'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* IN_YARD / AT_DOCK */
+                <>
+                  <div className="py-2 text-[11px] text-slate-700 space-y-1">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400 uppercase font-bold">Location</span>
+                      <span className="font-bold text-blue-700 text-right truncate max-w-[200px]">
+                        {activeRoute.currentPos.status === 'AT_DOCK'
+                          ? `Dock Bay ${activeRoute.shipment?.currentDockId || 'D01'}`
+                          : `Yard Slot ${activeRoute.shipment?.currentYardSlotId || 'A42'}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400">Cargo</span>
+                      <span className="font-semibold text-slate-800 text-right truncate max-w-[200px]">
+                        {activeRoute.shipment?.loadType || activeRoute.currentPos.trailerType || 'DRY_VAN'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5 py-1.5 bg-slate-50 rounded-xl px-2 border border-slate-200/70 text-center mb-2">
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Motion</span>
+                      <span className="font-bold text-slate-600 text-xs">0 mph (Parked)</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold">Dwell Time</span>
+                      <span className="font-bold text-amber-600 text-xs">
+                        {telemetryInfo?.dwellMinutes || 35} mins
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Manifest Button */}
+              {activeRoute.currentPos.shipmentId && (
+                <button
+                  onClick={() => window.location.assign(`/shipments/${activeRoute.currentPos?.shipmentId}`)}
+                  className="w-full py-1.5 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center space-x-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 shrink-0" />
+                  <span className="whitespace-nowrap">Inspect Manifest ({activeRoute.currentPos.shipmentId})</span>
+                </button>
+              )}
+            </div>
+          )
         )}
       </div>
     </div>
@@ -685,6 +685,7 @@ export const ControlTowerPage: React.FC = () => {
   const [kpis, setKpis] = useState<AnalyticsKPIs | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
+  const { containerRef: riskContainerRef, indicatorStyle: riskIndicatorStyle } = useSlidingIndicator(riskFilter);
   const [loading, setLoading] = useState(true);
   const [trailerPositions, setTrailerPositions] = useState<TrailerPosition[]>([]);
   const [allRoutes, setAllRoutes] = useState<Record<string, [number, number][]>>({});
@@ -833,19 +834,19 @@ export const ControlTowerPage: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Cards Grid */}
+      {/* KPI Cards Grid with Dynamic Animated Counters */}
       {kpis && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KPICard
             title="Active Inbound"
-            value={kpis.activeShipmentsCount}
+            value={<AnimatedCounter value={kpis.activeShipmentsCount} />}
             subtitle={`${kpis.trailersArrivingToday} Trailers Scheduled Today`}
             icon={Truck}
             highlightColor="blue"
           />
           <KPICard
             title="Dock Utilization"
-            value={`${kpis.dockUtilizationPercent}%`}
+            value={<AnimatedCounter value={kpis.dockUtilizationPercent} suffix="%" />}
             subtitle="Current Active Unloading Bays"
             icon={Building2}
             trend={{ value: 'Normal Fit', isPositive: true }}
@@ -853,7 +854,7 @@ export const ControlTowerPage: React.FC = () => {
           />
           <KPICard
             title="Yard Occupancy"
-            value={`${kpis.yardOccupancyPercent}%`}
+            value={<AnimatedCounter value={kpis.yardOccupancyPercent} suffix="%" />}
             subtitle="Total Available Slots Capacity"
             icon={Grid}
             trend={
@@ -865,7 +866,7 @@ export const ControlTowerPage: React.FC = () => {
           />
           <KPICard
             title="Active Exceptions"
-            value={kpis.activeExceptionsCount}
+            value={<AnimatedCounter value={kpis.activeExceptionsCount} />}
             subtitle="Requires Operator Resolution"
             icon={AlertTriangle}
             trend={
@@ -888,7 +889,7 @@ export const ControlTowerPage: React.FC = () => {
       />
 
       {/* ─── LIVE DOCK DOORS STRIP ─── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4 text-slate-700" />
@@ -900,12 +901,13 @@ export const ControlTowerPage: React.FC = () => {
             onClick={() => navigate('/docks')}
             className="text-xs font-mono text-blue-600 hover:text-blue-800 font-bold transition flex items-center space-x-1"
           >
-            <span>Manage All Dock Doors</span>
+            <span className="hidden sm:inline">Manage All Dock Doors</span>
+            <span className="sm:hidden">All Docks</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {['D01', 'D02', 'D03', 'D04', 'D05', 'D06'].map(dockId => {
             const dock = docks.find(d => d.id === dockId);
             const isOccupied = dock?.status === 'OCCUPIED';
@@ -978,8 +980,8 @@ export const ControlTowerPage: React.FC = () => {
       />
 
       {/* Table Filter & Search Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-        <div className="relative w-full md:w-80">
+      <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
+        <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -990,24 +992,44 @@ export const ControlTowerPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center space-x-3 w-full md:w-auto">
-          <div className="flex items-center space-x-2 text-xs text-slate-400 font-mono">
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>Risk Filter:</span>
+        <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+          <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-mono shrink-0">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Risk Filter:</span>
           </div>
-          <div className="flex items-center space-x-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
-            {['ALL', 'NORMAL', 'WARNING', 'DELAYED', 'CRITICAL'].map(risk => (
-              <button
-                key={risk}
-                onClick={() => setRiskFilter(risk)}
-                className={`px-3 py-1 rounded text-xs font-mono font-medium transition ${riskFilter === risk
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-900'
+          <div
+            ref={riskContainerRef}
+            className="relative flex items-center space-x-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200 shrink-0"
+          >
+            {/* Single persistent sliding pill with zero distortion and perfect rounded corners */}
+            <div
+              className="absolute top-0 left-0 bg-blue-600 rounded-lg shadow-xs pointer-events-none transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+              style={{
+                transform: riskIndicatorStyle.transform,
+                width: `${riskIndicatorStyle.width}px`,
+                height: `${riskIndicatorStyle.height}px`,
+                opacity: riskIndicatorStyle.opacity,
+                willChange: 'transform, width',
+              }}
+            />
+
+            {['ALL', 'NORMAL', 'WARNING', 'DELAYED', 'CRITICAL'].map(risk => {
+              const isActive = riskFilter === risk;
+              return (
+                <button
+                  key={risk}
+                  data-active={isActive}
+                  onClick={() => setRiskFilter(risk)}
+                  className={`relative px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono font-medium shrink-0 cursor-pointer select-none border-0 bg-transparent transition-colors duration-150 z-10 ${
+                    isActive
+                      ? 'text-white font-bold'
+                      : 'text-slate-500 hover:text-slate-900'
                   }`}
-              >
-                {risk}
-              </button>
-            ))}
+                >
+                  {risk}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1023,19 +1045,19 @@ export const ControlTowerPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse font-mono">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full min-w-[850px] text-left text-xs border-collapse font-mono">
             <thead>
               <tr className="bg-slate-50 text-slate-400 font-mono text-[11px] uppercase tracking-wider border-b border-slate-200">
-                <th className="py-3 px-4">Shipment ID</th>
-                <th className="py-3 px-4">Trailer / Carrier</th>
-                <th className="py-3 px-4">Priority / Type</th>
-                <th className="py-3 px-4">ETA / Appt</th>
-                <th className="py-3 px-4">Location</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Risk</th>
-                <th className="py-3 px-4">Dock Bay</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-4 whitespace-nowrap">Shipment ID</th>
+                <th className="py-3 px-4 whitespace-nowrap">Trailer / Carrier</th>
+                <th className="py-3 px-4 whitespace-nowrap">Priority / Type</th>
+                <th className="py-3 px-4 whitespace-nowrap">ETA / Appt</th>
+                <th className="py-3 px-4 whitespace-nowrap">Location</th>
+                <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                <th className="py-3 px-4 whitespace-nowrap">Risk</th>
+                <th className="py-3 px-4 whitespace-nowrap">Dock Bay</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-mono">
@@ -1048,54 +1070,54 @@ export const ControlTowerPage: React.FC = () => {
                       }`}
                     onClick={() => navigate(`/shipments/${s.id}`)}
                   >
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      <div>{s.id}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{s.trackingNumber}</div>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                      <div className="whitespace-nowrap">{s.id}</div>
+                      <div className="text-[10px] text-slate-400 font-normal whitespace-nowrap">{s.trackingNumber}</div>
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center space-x-1.5">
-                        <span className="font-semibold text-slate-800">{s.trailerId}</span>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-1.5 whitespace-nowrap">
+                        <span className="font-semibold text-slate-800 whitespace-nowrap">{s.trailerId}</span>
                         <button
                           onClick={e => handleFocusTruckFromRow(s.trailerId, e)}
-                          className="text-[10px] text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition font-mono"
+                          className="text-[10px] text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition font-mono whitespace-nowrap cursor-pointer"
                           title="Track on live map"
                         >
                           🗺️ Track
                         </button>
                       </div>
-                      <div className="text-[10px] text-slate-400">{s.carrierName}</div>
+                      <div className="text-[10px] text-slate-400 whitespace-nowrap">{s.carrierName}</div>
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <StatusBadge status={s.priority} type="priority" size="sm" />
-                      <div className="text-[10px] text-slate-400 mt-1">{s.loadType}</div>
+                      <div className="text-[10px] text-slate-400 mt-1 whitespace-nowrap">{s.loadType}</div>
                     </td>
 
-                    <td className="py-3.5 px-4 text-slate-700">
+                    <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
                       {(() => {
                         const etaDate = new Date(s.eta);
                         const apptDate = new Date(s.scheduledAppointment);
                         const diffMins = Math.round((etaDate.getTime() - apptDate.getTime()) / 60000);
 
                         return (
-                          <div>
-                            <div className="font-bold text-slate-900">
+                          <div className="whitespace-nowrap">
+                            <div className="font-bold text-slate-900 whitespace-nowrap">
                               {etaDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
-                            <div className="text-[10px] text-slate-400">
+                            <div className="text-[10px] text-slate-400 whitespace-nowrap">
                               Appt: {apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                             {diffMins <= 0 ? (
-                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-1">
+                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-1 whitespace-nowrap">
                                 <span>🟢 ON TIME ({diffMins === 0 ? '±0m' : `${diffMins}m`})</span>
                               </span>
                             ) : diffMins <= 20 ? (
-                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-1">
+                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-1 whitespace-nowrap">
                                 <span>🟡 DRIFTING (+{diffMins}m)</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 mt-1">
+                              <span className="inline-flex items-center space-x-1 text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 mt-1 whitespace-nowrap">
                                 <span>🔴 DELAYED (+{diffMins}m • AT RISK)</span>
                               </span>
                             )}
@@ -1104,41 +1126,41 @@ export const ControlTowerPage: React.FC = () => {
                       })()}
                     </td>
 
-                    <td className="py-3.5 px-4 text-slate-700">
+                    <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
                       {s.currentDockId ? (
-                        <span className="text-emerald-700 font-semibold">{s.currentDockId}</span>
+                        <span className="text-emerald-700 font-semibold whitespace-nowrap">{s.currentDockId}</span>
                       ) : s.currentYardSlotId ? (
-                        <span className="text-amber-700 font-semibold">Slot {s.currentYardSlotId}</span>
+                        <span className="text-amber-700 font-semibold whitespace-nowrap">Slot {s.currentYardSlotId}</span>
                       ) : (
-                        <span className="text-blue-600 font-semibold flex items-center space-x-1">
+                        <span className="text-blue-600 font-semibold flex items-center space-x-1 whitespace-nowrap">
                           <Navigation className="w-3 h-3 animate-pulse" />
                           <span>Highway En Route</span>
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <StatusBadge status={s.status} type="shipment" size="sm" />
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <StatusBadge status={s.risk} type="risk" size="sm" />
                     </td>
 
-                    <td className="py-3.5 px-4 font-bold">
+                    <td className="py-3.5 px-4 font-bold whitespace-nowrap">
                       {s.currentDockId ? (
-                        <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                           {s.currentDockId}
                         </span>
                       ) : (
-                        <span className="text-slate-400 text-[11px] font-normal italic">Unassigned</span>
+                        <span className="text-slate-400 text-[11px] font-normal italic whitespace-nowrap">Unassigned</span>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 text-right" onClick={e => e.stopPropagation()}>
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => setAllocationTarget(s)}
-                        className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 text-xs font-semibold flex items-center space-x-1.5 ml-auto transition shadow-sm"
+                        className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 text-xs font-semibold flex items-center space-x-1.5 ml-auto transition shadow-sm whitespace-nowrap cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Smart Dock</span>

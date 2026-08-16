@@ -19,8 +19,11 @@ import {
   RotateCw,
   Box,
   Layers,
-  ZoomIn
+  ZoomIn,
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
+import { MapGestureOverlay } from './MapGestureOverlay';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -236,6 +239,7 @@ export const SingleShipmentMap: React.FC<SingleShipmentMapProps> = ({ shipment, 
   const [etaMinutes, setEtaMinutes] = useState<number>(45);
   const [triggerFocus, setTriggerFocus] = useState(0);
   const [triggerFit, setTriggerFit] = useState(0);
+  const [isHudMinimized, setIsHudMinimized] = useState(false);
 
   const isStationary = shipment.status === 'IN_YARD' || shipment.status === 'DOCK_ASSIGNED' || shipment.status === 'PROCESSING' || shipment.status === 'COMPLETED';
 
@@ -283,45 +287,46 @@ export const SingleShipmentMap: React.FC<SingleShipmentMapProps> = ({ shipment, 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm font-sans space-y-0">
       {/* Map Header Bar */}
-      <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 rounded-lg bg-blue-600 text-white shadow-xs">
+      {/* Map Card Header */}
+      <div className="px-3.5 sm:px-5 py-3 sm:py-3.5 bg-slate-50/90 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="p-1.5 rounded-lg bg-blue-600 text-white shadow-xs shrink-0">
             <Navigation className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
               <span className="font-bold text-slate-900 text-xs font-mono">
                 LIVE FREIGHT HIGHWAY CORRIDOR TRACKER
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-bold flex items-center space-x-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>GPS ACTIVE</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-bold flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <span className="whitespace-nowrap">GPS ACTIVE</span>
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 font-mono">
+            <p className="text-[11px] text-slate-500 font-mono truncate">
               {shipment.origin || 'Origin Terminal'} ➔ {shipment.destination || 'Naperville DC-1 Hub'}
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center space-x-2 font-mono text-xs">
+        <div className="flex items-center space-x-2 font-mono text-xs shrink-0 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setTriggerFocus(prev => prev + 1)}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold flex items-center space-x-1.5 transition shadow-2xs cursor-pointer"
+            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold flex items-center space-x-1.5 transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
             title="Center camera on this truck"
           >
-            <ZoomIn className="w-3.5 h-3.5 text-blue-600" />
-            <span>Focus Truck</span>
+            <ZoomIn className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span className="whitespace-nowrap">Focus Truck</span>
           </button>
 
           <button
             onClick={() => setTriggerFit(prev => prev + 1)}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold flex items-center space-x-1.5 transition shadow-2xs cursor-pointer"
+            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold flex items-center space-x-1.5 transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
             title="Fit full corridor route in view"
           >
-            <Layers className="w-3.5 h-3.5 text-slate-600" />
-            <span>Fit Route</span>
+            <Layers className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+            <span className="whitespace-nowrap">Fit Route</span>
           </button>
         </div>
       </div>
@@ -339,6 +344,9 @@ export const SingleShipmentMap: React.FC<SingleShipmentMapProps> = ({ shipment, 
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             maxZoom={19}
           />
+
+          {/* 2-Finger Mobile Touch Gesture Overlay */}
+          <MapGestureOverlay />
 
           <SingleMapCameraHandler
             truckPos={currentPos}
@@ -414,42 +422,68 @@ export const SingleShipmentMap: React.FC<SingleShipmentMapProps> = ({ shipment, 
         </MapContainer>
 
         {/* Floating Telemetry HUD */}
-        <div className="absolute top-4 left-4 z-[400] bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-xl p-3 shadow-lg font-mono text-xs max-w-xs space-y-2 pointer-events-auto">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-            <span className="text-[10px] font-bold uppercase text-slate-400">Unit Telemetry</span>
-            <span className="font-black text-slate-900">{trailerId}</span>
+        {isHudMinimized ? (
+          <div className="absolute bottom-3 left-3 z-[400] bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-xl px-2.5 py-1.5 shadow-lg font-mono text-xs flex items-center space-x-2 pointer-events-auto">
+            <span className="font-bold text-slate-900">{trailerId}</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-emerald-700 font-semibold truncate max-w-[130px] sm:max-w-none">
+              {isStationary ? (shipment.currentDockId ? `At ${shipment.currentDockId}` : `Yard Slot ${shipment.currentYardSlotId || 'A01'}`) : `${speedMph} mph`}
+            </span>
+            <button
+              onClick={() => setIsHudMinimized(false)}
+              className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              title="Expand telemetry panel"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-blue-600" />
+            </button>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 text-slate-700 text-[11px]">
-            <div>
-              <span className="text-[9px] text-slate-400 block uppercase">Speed</span>
-              <span className="font-bold text-slate-900 flex items-center space-x-1">
-                <Gauge className="w-3 h-3 text-blue-600" />
-                <span>{isStationary ? '0 mph' : `${speedMph} mph`}</span>
-              </span>
+        ) : (
+          <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-auto z-[400] bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 shadow-lg font-mono text-xs max-w-full sm:max-w-xs space-y-1.5 sm:space-y-2 pointer-events-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+              <span className="text-[10px] font-bold uppercase text-slate-400">Unit Telemetry</span>
+              <div className="flex items-center space-x-2">
+                <span className="font-black text-slate-900">{trailerId}</span>
+                <button
+                  onClick={() => setIsHudMinimized(true)}
+                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                  title="Minimize telemetry panel"
+                >
+                  <Minimize2 className="w-3 h-3" />
+                </button>
+              </div>
             </div>
 
-            <div>
-              <span className="text-[9px] text-slate-400 block uppercase">Transit Status</span>
-              <span className="font-bold text-emerald-700 truncate block">
-                {isStationary ? (shipment.currentDockId ? `At ${shipment.currentDockId}` : `In Yard Slot ${shipment.currentYardSlotId || 'A01'}`) : trafficStatus}
-              </span>
-            </div>
+            <div className="grid grid-cols-2 gap-2 text-slate-700 text-[11px]">
+              <div>
+                <span className="text-[9px] text-slate-400 block uppercase">Speed</span>
+                <span className="font-bold text-slate-900 flex items-center space-x-1">
+                  <Gauge className="w-3 h-3 text-blue-600" />
+                  <span>{isStationary ? '0 mph' : `${speedMph} mph`}</span>
+                </span>
+              </div>
 
-            <div>
-              <span className="text-[9px] text-slate-400 block uppercase">Est. Arrival</span>
-              <span className="font-bold text-slate-900 flex items-center space-x-1">
-                <Clock className="w-3 h-3 text-amber-600" />
-                <span>{new Date(shipment.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              </span>
-            </div>
+              <div>
+                <span className="text-[9px] text-slate-400 block uppercase">Transit Status</span>
+                <span className="font-bold text-emerald-700 truncate block">
+                  {isStationary ? (shipment.currentDockId ? `At ${shipment.currentDockId}` : `In Yard Slot ${shipment.currentYardSlotId || 'A01'}`) : trafficStatus}
+                </span>
+              </div>
 
-            <div>
-              <span className="text-[9px] text-slate-400 block uppercase">Load Type</span>
-              <span className="font-bold text-blue-700">{shipment.loadType}</span>
+              <div>
+                <span className="text-[9px] text-slate-400 block uppercase">Est. Arrival</span>
+                <span className="font-bold text-slate-900 flex items-center space-x-1">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  <span>{new Date(shipment.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[9px] text-slate-400 block uppercase">Load Type</span>
+                <span className="font-bold text-blue-700">{shipment.loadType}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

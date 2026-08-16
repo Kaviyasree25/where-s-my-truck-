@@ -60,10 +60,10 @@ export const ShipmentDetailPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Back Button & Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
           onClick={() => navigate('/control-tower')}
-          className="flex items-center space-x-2 text-xs text-slate-400 hover:text-slate-900 transition font-mono"
+          className="flex items-center space-x-2 text-xs text-slate-400 hover:text-slate-900 transition font-mono cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Control Tower</span>
@@ -71,7 +71,7 @@ export const ShipmentDetailPage: React.FC = () => {
 
         <button
           onClick={() => setShowAllocationModal(true)}
-          className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center space-x-2 transition shadow-lg shadow-slate-200"
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold font-mono flex items-center justify-center space-x-2 transition shadow-sm cursor-pointer self-start sm:self-auto"
         >
           <Sparkles className="w-4 h-4" />
           <span>Smart Dock Allocation</span>
@@ -79,10 +79,10 @@ export const ShipmentDetailPage: React.FC = () => {
       </div>
 
       {/* Title Card */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
         <div>
-          <div className="flex items-center space-x-3">
-            <h2 className="text-2xl font-extrabold text-slate-900 font-mono">{shipment.id}</h2>
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap gap-y-1">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-mono">{shipment.id}</h2>
             <StatusBadge status={shipment.status} type="shipment" />
             <StatusBadge status={shipment.risk} type="risk" />
             <StatusBadge status={shipment.priority} type="priority" />
@@ -92,14 +92,14 @@ export const ShipmentDetailPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-4 font-mono text-xs">
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-            <span className="text-[10px] text-slate-400 block">TRAILER</span>
+        <div className="flex items-center space-x-3 font-mono text-xs">
+          <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200 text-center flex-1 sm:flex-initial min-w-[100px]">
+            <span className="text-[10px] text-slate-400 block font-bold">TRAILER</span>
             <span className="text-sm font-bold text-blue-600">{shipment.trailerId}</span>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
-            <span className="text-[10px] text-slate-400 block">ASSIGNED DOCK</span>
+          <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200 text-center flex-1 sm:flex-initial min-w-[110px]">
+            <span className="text-[10px] text-slate-400 block font-bold">ASSIGNED DOCK</span>
             <span className="text-sm font-bold text-emerald-700">
               {shipment.currentDockId || 'Unassigned'}
             </span>
@@ -114,41 +114,41 @@ export const ShipmentDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Shipment & Trailer Information */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xs">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 pb-3">
-              Shipment Manifest & Logistics Details
+              Shipment Manifest &amp; Logistics Details
             </h3>
 
-            <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase">Supplier / Shipper</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-bold">Supplier / Shipper</span>
                 <span className="text-slate-900 font-semibold">{shipment.supplier}</span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase">Carrier</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-bold">Carrier</span>
                 <span className="text-blue-600 font-semibold">{shipment.carrierName}</span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase">Origin Depot</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-bold">Origin Depot</span>
                 <span className="text-slate-700">{shipment.origin}</span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase">Destination Bay</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-bold">Destination Bay</span>
                 <span className="text-slate-700">{shipment.destination}</span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase">ETA</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-bold">ETA</span>
                 <span className="text-slate-700">
                   {new Date(shipment.eta).toLocaleString()}
                 </span>
               </div>
 
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase">Scheduled Appointment</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-bold">Scheduled Appointment</span>
                 <span className="text-slate-700">
                   {new Date(shipment.scheduledAppointment).toLocaleString()}
                 </span>

@@ -33,6 +33,12 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const api = {
+  // Health Check
+  checkHealth: async (): Promise<{ status: string; healthy: boolean; uptime: number; timestamp: string }> => {
+    const res = await apiClient.get('/health', { timeout: 3000 });
+    return res.data;
+  },
+
   // Auth
   login: async (email: string, password: string): Promise<{ success: boolean; token: string; user: User }> => {
     const res = await apiClient.post('/auth/login', { email, password });

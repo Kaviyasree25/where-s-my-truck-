@@ -92,7 +92,7 @@ export const MLModelModal: React.FC<MLModelModalProps> = ({ onClose, onRetrained
   const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-hidden font-mono"
+      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden font-mono"
     >
       {/* Modal Card (Fixed max height with clean internal scroll) */}
       <div
@@ -100,37 +100,37 @@ export const MLModelModal: React.FC<MLModelModalProps> = ({ onClose, onRetrained
         className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
       >
         {/* ─── Fixed Header (No Scroll) ─── */}
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between shrink-0">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 shrink-0">
               <Cpu className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="font-extrabold text-slate-900 text-base font-sans">
+            <div className="min-w-0">
+              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                <h3 className="font-extrabold text-slate-900 text-sm sm:text-base font-sans truncate">
                   Machine Learning Decision Support Engine
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
                   v2.4 RANDOM_FOREST
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-sans">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-sans truncate">
                 Real-Time Multi-Factor Ensemble, Gini Impurity Splits &amp; Safety Constraint Guardrails
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* ─── Scrollable Content Body (Clean single scrollbar) ─── */}
-        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
           {/* 1. Core Model Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
               <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
                 Ensemble Size

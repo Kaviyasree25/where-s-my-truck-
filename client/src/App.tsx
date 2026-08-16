@@ -40,6 +40,7 @@ const ProtectedRoute: React.FC<{
 const MainLayout: React.FC = () => {
   const { currentUser, currentRole } = useAuth();
   const [activeExceptionsCount, setActiveExceptionsCount] = useState(0);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const fetchExceptionsCount = async () => {
     try {
@@ -70,14 +71,18 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="h-screen bg-slate-50 text-slate-900 flex overflow-hidden">
-      <Sidebar activeExceptionsCount={activeExceptionsCount} />
+      <Sidebar
+        activeExceptionsCount={activeExceptionsCount}
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
+      />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header />
-        {/* Simulation toolbar only visible to internal warehouse operations roles */}
-        {currentRole !== 'CUSTOMER' && (
-          <DemoBar onSimulationTriggered={fetchExceptionsCount} />
-        )}
-        <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+        <Header onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
+        <main className="flex-1 px-2 sm:px-4 py-2 sm:py-3 overflow-y-auto overflow-x-hidden max-w-7xl mx-auto w-full">
+          {/* Simulation toolbar only visible to internal warehouse operations roles */}
+          {currentRole !== 'CUSTOMER' && (
+            <DemoBar onSimulationTriggered={fetchExceptionsCount} />
+          )}
           <Breadcrumbs />
           <Routes>
             <Route

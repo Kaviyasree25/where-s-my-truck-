@@ -68,37 +68,37 @@ export const YardMoveModal: React.FC<YardMoveModalProps> = ({
   const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden font-mono"
+      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden font-mono"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/20">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between shrink-0">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="p-2 rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/20 shrink-0">
               <Grid className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-extrabold text-slate-900 text-base font-sans">
+            <div className="min-w-0">
+              <h3 className="font-extrabold text-slate-900 text-sm sm:text-base font-sans truncate">
                 Yard Mule Trailer Transfer
               </h3>
-              <p className="text-xs text-slate-500 font-sans">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-sans truncate">
                 Re-stage trailer to an alternate yard holding slot
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleMove} className="p-6 space-y-4 text-xs">
+        <form onSubmit={handleMove} className="p-4 sm:p-6 space-y-4 text-xs">
           {error && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
