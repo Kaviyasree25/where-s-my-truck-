@@ -12,7 +12,7 @@ import { useMap } from 'react-leaflet';
 export const MapGestureOverlay: React.FC = () => {
   const map = useMap();
   const [showOverlay, setShowOverlay] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const isTwoFingerGestureActive = useRef(false);
   const lastTwoFingerTimestamp = useRef(0);
